@@ -1,4 +1,32 @@
-// Zustand stores
-// Global state management for the application
+/**
+ * Stores Module
+ * Exports all Zustand stores and related types/hooks
+ */
 
-export {}
+// Harness store
+export {
+  useHarnessStore,
+  useActiveHarness,
+  useDetectedHarnesses,
+  useIsDetecting,
+} from './harness-store'
+
+// UI store
+export type { Theme, SidebarSection, ViewMode, SortDirection, SortConfig, Toast } from './ui-store'
+export {
+  useUIStore,
+  useTheme,
+  useResolvedTheme,
+  useSidebarCollapsed,
+  useCommandPaletteOpen,
+  useToasts,
+} from './ui-store'
+
+// Selection store
+export type { SelectableType, SelectedItem } from './selection-store'
+export {
+  useSelectionStore,
+  useSelection,
+  useClipboard,
+  useActiveSelectionType,
+} from './selection-store'
