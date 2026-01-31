@@ -30,17 +30,17 @@ A unified UI for managing configurations, memory, hooks, and skills across multi
 
 ## Tech Stack
 
-- **Frontend:** React 18 + TypeScript + Vite
-- **UI:** shadcn/ui + Tailwind CSS
-- **State:** Zustand + TanStack Query
-- **Code Editor:** Monaco Editor
-- **Charts:** Recharts
+- **Frontend:** React 19 + TypeScript + Vite
+- **UI:** shadcn/ui + Tailwind CSS (planned)
+- **State:** Zustand + TanStack Query (planned)
+- **Code Editor:** Monaco Editor (planned)
+- **Charts:** Recharts (planned)
 
 ## Getting Started
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/agent-config-manager.git
+git clone https://github.com/jpequegn/agent-config-manager.git
 cd agent-config-manager
 
 # Install dependencies
