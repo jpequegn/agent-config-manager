@@ -1,4 +1,7 @@
-// Core services
-// File system, detection, sync, and other shared services
+/**
+ * Services Module
+ * Exports all service modules
+ */
 
-export {}
+// File system service
+export * from './filesystem'
