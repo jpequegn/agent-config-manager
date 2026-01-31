@@ -23,6 +23,14 @@ export default defineConfig([
     rules: {
       // Allow exporting non-component values in UI component files (shadcn/ui pattern)
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // Allow underscore-prefixed variables to be unused (common pattern for intentionally unused params)
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
     },
   },
   // Prettier must be last to override other configs

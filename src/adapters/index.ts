@@ -1,5 +1,12 @@
-// Harness-specific adapters
-// Each adapter implements the HarnessAdapter interface to provide
-// unified access to different AI coding assistant configurations
+/**
+ * Adapters Module
+ * Exports all adapter-related interfaces, classes, and utilities
+ */
 
-export {}
+// Base adapter interface and class
+export type { HarnessAdapter } from './base'
+export { BaseHarnessAdapter } from './base'
+
+// Registry and factory utilities
+export type { AdapterFactory } from './registry'
+export { adapterRegistry, getAdapter, registerAdapter } from './registry'
