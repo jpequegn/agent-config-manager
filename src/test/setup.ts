@@ -1,0 +1,26 @@
+import '@testing-library/jest-dom'
+
+// Extend Vitest's expect with jest-dom matchers
+// This is done automatically by importing '@testing-library/jest-dom'
+
+// Mock window.matchMedia for components that use media queries
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
+})
+
+// Mock ResizeObserver for components that use it
+globalThis.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
