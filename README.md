@@ -2,6 +2,7 @@
 
 A unified UI for managing configurations, memory, hooks, and skills across multiple AI coding harnesses.
 
+[![CI](https://github.com/jpequegn/agent-config-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/jpequegn/agent-config-manager/actions/workflows/ci.yml)
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
