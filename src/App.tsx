@@ -21,7 +21,12 @@ function App() {
           <img src={viteLogo} className="h-24 w-24" alt="Vite logo" />
         </a>
         <a href="https://react.dev" target="_blank" className="hover:opacity-80 transition-opacity">
-          <img src={reactLogo} className="h-24 w-24 animate-spin" style={{ animationDuration: '20s' }} alt="React logo" />
+          <img
+            src={reactLogo}
+            className="h-24 w-24 animate-spin"
+            style={{ animationDuration: '20s' }}
+            alt="React logo"
+          />
         </a>
       </div>
 
@@ -34,9 +39,7 @@ function App() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
-            <Button onClick={() => setCount((count) => count + 1)}>
-              Count is {count}
-            </Button>
+            <Button onClick={() => setCount((count) => count + 1)}>Count is {count}</Button>
             <Button variant="secondary" onClick={() => setCount(0)}>
               Reset
             </Button>
@@ -46,7 +49,8 @@ function App() {
           </div>
           <Input placeholder="Type something to test input..." />
           <p className="text-sm text-muted-foreground">
-            Edit <code className="font-mono bg-muted px-1 rounded">src/App.tsx</code> and save to test HMR
+            Edit <code className="font-mono bg-muted px-1 rounded">src/App.tsx</code> and save to
+            test HMR
           </p>
         </CardContent>
       </Card>
