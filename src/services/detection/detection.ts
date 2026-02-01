@@ -7,12 +7,33 @@ import type { HarnessType, DetectionResult, HarnessConfigPaths, HarnessStatus } 
 import type { FileSystemProvider } from '../filesystem/service'
 import { detectOS, type OperatingSystem } from '../filesystem/paths'
 
+/**
+ * Validate path segment doesn't contain path traversal sequences
+ * @throws Error if path contains traversal sequences
+ */
+function validatePathSegment(segment: string): void {
+  // Check for path traversal attempts
+  if (segment.includes('..')) {
+    throw new Error(`Invalid path segment: contains path traversal sequence`)
+  }
+}
+
 /** Join paths with the correct separator for the given OS */
 function joinPathForOS(os: OperatingSystem, ...segments: string[]): string {
   const sep = os === 'windows' ? '\\' : '/'
+  const otherSep = os === 'windows' ? '/' : '\\'
+
   return segments
     .filter((s) => s.length > 0)
     .map((s, i) => {
+      // Validate each segment (skip first segment which is home path)
+      if (i > 0) {
+        validatePathSegment(s)
+      }
+
+      // Normalize separators to the target OS
+      s = s.split(otherSep).join(sep)
+
       // Remove leading separator except for first segment
       if (i > 0 && (s.startsWith('/') || s.startsWith('\\'))) {
         s = s.slice(1)
