@@ -30,3 +30,14 @@ export {
   useClipboard,
   useActiveSelectionType,
 } from './selection-store'
+
+// Onboarding store
+export type { OnboardingStep } from './onboarding-store'
+export {
+  useOnboardingStore,
+  useCurrentStep,
+  useIsWizardOpen,
+  useHasCompletedOnboarding,
+  ONBOARDING_STEPS,
+  STEP_INFO,
+} from './onboarding-store'
