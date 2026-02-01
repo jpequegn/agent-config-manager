@@ -133,9 +133,12 @@ describe('ThemeProvider', () => {
     expect(mockSetResolvedTheme).toHaveBeenCalledWith('dark')
   })
 
-  it('uses defaultTheme when no theme is set', async () => {
+  it('uses defaultTheme when theme store returns falsy value', async () => {
+    // Edge case: testing behavior when theme is somehow unset (e.g., corrupted storage)
+    // In practice, Zustand initializes with a default, but we test defensive behavior
     const { useTheme, useResolvedTheme } = await import('@/stores')
-    vi.mocked(useTheme).mockReturnValue(null as unknown as 'dark')
+    // Use empty string to simulate unset state (falsy but type-compatible)
+    vi.mocked(useTheme).mockReturnValue('' as 'dark')
     vi.mocked(useResolvedTheme).mockReturnValue('dark')
     vi.mocked(useUIStore).mockImplementation((selector) => {
       const state = {
