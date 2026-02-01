@@ -3,8 +3,8 @@
  * Auto-detects installed AI coding harnesses
  */
 
-import { useEffect, useState } from 'react'
-import { Loader2, CheckCircle2, XCircle, RefreshCw } from 'lucide-react'
+import { useEffect, useState, useCallback } from 'react'
+import { Loader2, CheckCircle2, XCircle, RefreshCw, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { HarnessIcon } from '@/components/harness/HarnessIcon'
@@ -42,31 +42,36 @@ async function simulateDetection(): Promise<DetectionResult[]> {
   return results
 }
 
-export function DetectionStep({ onComplete, onSkip: _onSkip }: DetectionStepProps) {
+export function DetectionStep({ onComplete, onSkip }: DetectionStepProps) {
   const [isScanning, setIsScanning] = useState(false)
   const [results, setResults] = useState<DetectionResult[]>([])
   const [hasScanned, setHasScanned] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const startScan = async () => {
+  const startScan = useCallback(async () => {
     setIsScanning(true)
     setResults([])
+    setError(null)
 
     try {
       // TODO: Replace with actual detection service
       const detectionResults = await simulateDetection()
       setResults(detectionResults)
       setHasScanned(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to detect harnesses')
+      setHasScanned(true)
     } finally {
       setIsScanning(false)
     }
-  }
+  }, [])
 
   // Auto-start scan on mount
   useEffect(() => {
     if (!hasScanned) {
       startScan()
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasScanned, startScan])
 
   const detectedCount = results.filter((r) => r.detected).length
   const totalCount = results.length
@@ -93,8 +98,30 @@ export function DetectionStep({ onComplete, onSkip: _onSkip }: DetectionStepProp
         </div>
       )}
 
+      {/* Error state */}
+      {!isScanning && hasScanned && error && (
+        <div className="flex flex-col items-center gap-4 py-8">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <div className="text-center">
+            <p className="font-medium text-destructive">Detection Failed</p>
+            <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={startScan}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Try Again
+            </Button>
+            <Button variant="ghost" onClick={onSkip}>
+              Skip
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Results grid */}
-      {!isScanning && hasScanned && (
+      {!isScanning && hasScanned && !error && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((result) => {
@@ -152,9 +179,13 @@ export function DetectionStep({ onComplete, onSkip: _onSkip }: DetectionStepProp
               <RefreshCw className="mr-2 h-4 w-4" />
               Scan Again
             </Button>
-            <Button onClick={() => onComplete(results)}>
-              {detectedCount > 0 ? 'Continue' : 'Skip'}
-            </Button>
+            {detectedCount > 0 ? (
+              <Button onClick={() => onComplete(results)}>Continue</Button>
+            ) : (
+              <Button variant="ghost" onClick={onSkip}>
+                Skip
+              </Button>
+            )}
           </div>
         </>
       )}
