@@ -82,6 +82,7 @@ export function CommandPalette() {
   )
 
   // Navigation commands
+  // TODO: Replace console.log placeholders with actual navigation once routing is implemented
   const navigationCommands: CommandGroupDef = {
     heading: 'Navigation',
     items: [
@@ -90,7 +91,7 @@ export function CommandPalette() {
         label: 'Go to Skills',
         icon: Zap,
         shortcut: '⌘1',
-        onSelect: () => console.log('Navigate to Skills'),
+        onSelect: () => console.log('Navigate to Skills'), // TODO: Implement routing
         keywords: ['skills', 'commands', 'prompts'],
       },
       {
@@ -98,7 +99,7 @@ export function CommandPalette() {
         label: 'Go to Hooks',
         icon: Code2,
         shortcut: '⌘2',
-        onSelect: () => console.log('Navigate to Hooks'),
+        onSelect: () => console.log('Navigate to Hooks'), // TODO: Implement routing
         keywords: ['hooks', 'automation', 'scripts'],
       },
       {
@@ -106,7 +107,7 @@ export function CommandPalette() {
         label: 'Go to Sessions',
         icon: History,
         shortcut: '⌘3',
-        onSelect: () => console.log('Navigate to Sessions'),
+        onSelect: () => console.log('Navigate to Sessions'), // TODO: Implement routing
         keywords: ['sessions', 'history', 'conversations'],
       },
       {
@@ -114,7 +115,7 @@ export function CommandPalette() {
         label: 'Go to Memory',
         icon: HardDrive,
         shortcut: '⌘4',
-        onSelect: () => console.log('Navigate to Memory'),
+        onSelect: () => console.log('Navigate to Memory'), // TODO: Implement routing
         keywords: ['memory', 'storage', 'context'],
       },
       {
@@ -122,7 +123,7 @@ export function CommandPalette() {
         label: 'Go to Tools & MCP',
         icon: Wrench,
         shortcut: '⌘5',
-        onSelect: () => console.log('Navigate to Tools'),
+        onSelect: () => console.log('Navigate to Tools'), // TODO: Implement routing
         keywords: ['tools', 'mcp', 'servers'],
       },
       {
@@ -130,7 +131,7 @@ export function CommandPalette() {
         label: 'Go to Settings',
         icon: Settings,
         shortcut: '⌘,',
-        onSelect: () => console.log('Navigate to Settings'),
+        onSelect: () => console.log('Navigate to Settings'), // TODO: Implement routing
         keywords: ['settings', 'preferences', 'config'],
       },
     ],
@@ -152,6 +153,7 @@ export function CommandPalette() {
   }
 
   // Action commands
+  // TODO: Replace console.log placeholders with actual actions once features are implemented
   const actionCommands: CommandGroupDef = {
     heading: 'Actions',
     items: [
@@ -159,14 +161,14 @@ export function CommandPalette() {
         id: 'action-new-skill',
         label: 'Create New Skill',
         icon: Plus,
-        onSelect: () => console.log('Create new skill'),
+        onSelect: () => console.log('Create new skill'), // TODO: Implement skill creation
         keywords: ['create', 'new', 'skill', 'add'],
       },
       {
         id: 'action-new-hook',
         label: 'Create New Hook',
         icon: Plus,
-        onSelect: () => console.log('Create new hook'),
+        onSelect: () => console.log('Create new hook'), // TODO: Implement hook creation
         keywords: ['create', 'new', 'hook', 'add'],
       },
       {
@@ -174,14 +176,14 @@ export function CommandPalette() {
         label: 'Refresh All',
         icon: RefreshCw,
         shortcut: '⌘R',
-        onSelect: () => console.log('Refresh all'),
+        onSelect: () => console.log('Refresh all'), // TODO: Implement refresh
         keywords: ['refresh', 'reload', 'sync'],
       },
       {
         id: 'action-docs',
         label: 'Open Documentation',
         icon: FileText,
-        onSelect: () => console.log('Open docs'),
+        onSelect: () => console.log('Open docs'), // TODO: Implement docs link
         keywords: ['docs', 'documentation', 'help'],
       },
     ],
