@@ -123,6 +123,14 @@ body {
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Harness brand colors */
+  --harness-claude-code: oklch(0.65 0.17 55);
+  --harness-cursor: oklch(0.3 0 0);
+  --harness-copilot: oklch(0.55 0.2 265);
+  --harness-cline: oklch(0.65 0.18 160);
+  --harness-continue: oklch(0.6 0.18 240);
+  --harness-aider: oklch(0.6 0.2 290);
 }
 
 .dark {
@@ -157,6 +165,14 @@ body {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Harness brand colors (optimized for dark mode) */
+  --harness-claude-code: oklch(0.75 0.17 55);
+  --harness-cursor: oklch(0.85 0 0);
+  --harness-copilot: oklch(0.7 0.18 265);
+  --harness-cline: oklch(0.75 0.16 160);
+  --harness-continue: oklch(0.7 0.16 240);
+  --harness-aider: oklch(0.7 0.18 290);
 }
 
 @layer base {
