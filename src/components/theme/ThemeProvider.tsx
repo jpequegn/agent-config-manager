@@ -42,6 +42,7 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
   const hasInitialized = useRef(false)
 
   // Initialize theme on mount only
+
   useEffect(() => {
     if (hasInitialized.current) return
     hasInitialized.current = true
@@ -55,7 +56,7 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
     const resolved = theme === 'system' ? getSystemTheme() : theme || defaultTheme
     setResolvedTheme(resolved as 'light' | 'dark')
     applyTheme(resolved as 'light' | 'dark')
-  }, []) // Empty deps - only run on mount
+  }, [])
 
   // Apply theme whenever resolved theme changes (handles user toggling)
   useEffect(() => {
