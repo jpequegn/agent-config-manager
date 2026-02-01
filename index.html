@@ -7,24 +7,24 @@
     <title>Agent Config Manager</title>
     <script>
       // Prevent flash of unstyled content (FOUC) by applying theme before render
-      (function() {
+      ;(function () {
         try {
-          var stored = localStorage.getItem('ui-store');
+          var stored = localStorage.getItem('ui-store')
           if (stored) {
-            var state = JSON.parse(stored).state;
-            var theme = state && state.theme;
+            var state = JSON.parse(stored).state
+            var theme = state && state.theme
             if (theme === 'light') {
-              document.documentElement.classList.remove('dark');
-              document.documentElement.classList.add('light');
+              document.documentElement.classList.remove('dark')
+              document.documentElement.classList.add('light')
             } else if (theme === 'system') {
-              var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-              document.documentElement.classList.remove('light', 'dark');
-              document.documentElement.classList.add(prefersDark ? 'dark' : 'light');
+              var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+              document.documentElement.classList.remove('light', 'dark')
+              document.documentElement.classList.add(prefersDark ? 'dark' : 'light')
             }
             // 'dark' is already set as default in HTML
           }
         } catch (e) {}
-      })();
+      })()
     </script>
   </head>
   <body>
