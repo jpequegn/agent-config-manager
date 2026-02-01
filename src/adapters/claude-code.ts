@@ -622,9 +622,9 @@ export class ClaudeCodeAdapter extends BaseHarnessAdapter {
     return settings.settings.find((s) => s.key === key) || null
   }
 
-  async setSetting(key: string, value: unknown): Promise<void> {
+  async setSetting(_key: string, _value: unknown): Promise<void> {
     // Would update settings.json
-    console.log(`Setting ${key} to`, value)
+    // Implementation will write to ~/.claude/settings.json via backend service
   }
 }
 

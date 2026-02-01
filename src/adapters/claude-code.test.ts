@@ -138,6 +138,10 @@ describe('ClaudeCodeAdapter', () => {
     it('should delete a hook', async () => {
       await expect(adapter.deleteHook('session-start-compact')).resolves.toBeUndefined()
     })
+
+    it('should throw when deleting non-existent hook', async () => {
+      await expect(adapter.deleteHook('non-existent')).rejects.toThrow('Hook not found')
+    })
   })
 
   describe('sessions', () => {
@@ -216,6 +220,12 @@ describe('ClaudeCodeAdapter', () => {
 
     it('should delete a memory entry', async () => {
       await expect(adapter.deleteMemoryEntry('mem-001')).resolves.toBeUndefined()
+    })
+
+    it('should throw when deleting non-existent memory entry', async () => {
+      await expect(adapter.deleteMemoryEntry('non-existent')).rejects.toThrow(
+        'Memory entry not found'
+      )
     })
   })
 
