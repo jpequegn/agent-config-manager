@@ -1,4 +1,6 @@
-// Custom React hooks
-// Reusable hooks for common patterns
+/**
+ * Hooks Module
+ * Custom React hooks
+ */
 
-export {}
+export { useErrorHandler, useToastNotifications } from './useErrorHandler'
