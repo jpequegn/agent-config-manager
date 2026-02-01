@@ -1,4 +1,7 @@
-// Layout components
-// App shell, sidebar, header, and other structural components
+/**
+ * Layout Components
+ */
 
-export {}
+export { AppShell } from './AppShell'
+export { Sidebar } from './Sidebar'
+export { Header } from './Header'

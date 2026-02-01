@@ -3,6 +3,19 @@
  * Utility functions and services
  */
 
+// Utility functions
+export {
+  cn,
+  formatBytes,
+  formatRelativeTime,
+  truncate,
+  debounce,
+  throttle,
+  generateId,
+  capitalize,
+  kebabToTitle,
+} from './utils'
+
 // Error types and utilities
 export {
   AppError,
