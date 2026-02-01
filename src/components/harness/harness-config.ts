@@ -88,9 +88,19 @@ export function getHarnessConfig(type: HarnessType): HarnessDisplayConfig {
   return harnessConfigs[type]
 }
 
+/** Explicit ordering of harness types for consistent display */
+const harnessOrder: HarnessType[] = [
+  'claude-code',
+  'cursor',
+  'copilot',
+  'cline',
+  'continue',
+  'aider',
+]
+
 /**
- * Get all harness types
+ * Get all harness types in display order
  */
 export function getAllHarnessTypes(): HarnessType[] {
-  return Object.keys(harnessConfigs) as HarnessType[]
+  return harnessOrder
 }

@@ -30,6 +30,10 @@ const iconMap: Record<HarnessType, React.ComponentType<{ className?: string }>> 
  */
 export function HarnessIcon({ type, className }: HarnessIconProps) {
   const Icon = iconMap[type]
+  if (!Icon) {
+    // Fallback for invalid harness type
+    return <Sparkles className={cn('h-4 w-4', className)} />
+  }
   return <Icon className={cn('h-4 w-4', className)} />
 }
 

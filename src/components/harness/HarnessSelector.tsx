@@ -88,7 +88,7 @@ export function HarnessSelector({ className, onAddHarness }: HarnessSelectorProp
             type={type}
             isActive={activeHarness === type}
             isDetected={isHarnessDetected(type)}
-            onClick={() => setActiveHarness(type)}
+            onClick={() => isHarnessDetected(type) && setActiveHarness(type)}
           />
         ))}
       </div>
