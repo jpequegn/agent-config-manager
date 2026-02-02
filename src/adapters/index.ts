@@ -14,12 +14,15 @@ export { adapterRegistry, getAdapter, registerAdapter } from './registry'
 // Harness-specific adapters
 export { ClaudeCodeAdapter, createClaudeCodeAdapter } from './claude-code'
 export { CursorAdapter, createCursorAdapter } from './cursor'
+export { CopilotAdapter, createCopilotAdapter } from './copilot'
 
 // Register all adapters
 import { registerAdapter } from './registry'
 import { createClaudeCodeAdapter } from './claude-code'
 import { createCursorAdapter } from './cursor'
+import { createCopilotAdapter } from './copilot'
 
 // Auto-register adapters
 registerAdapter('claude-code', 'Claude Code', createClaudeCodeAdapter)
 registerAdapter('cursor', 'Cursor', createCursorAdapter)
+registerAdapter('copilot', 'GitHub Copilot', createCopilotAdapter)
