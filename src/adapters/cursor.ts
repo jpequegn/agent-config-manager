@@ -31,6 +31,7 @@ import type {
 } from '@/types'
 
 // Type definitions for Cursor configuration files
+// TODO: These interfaces will be used when implementing actual file parsing via backend
 
 /** Cursor settings.json structure */
 export interface CursorSettings {
@@ -72,11 +73,13 @@ export class CursorAdapter extends BaseHarnessAdapter {
   readonly displayName = 'Cursor'
 
   /** Base paths for Cursor configuration */
+  // TODO: Use os.homedir() for cross-platform path resolution
+  // These paths are placeholders - actual resolution happens via backend service
   private readonly basePaths = {
     config: '~/.cursor',
     settings: '~/.cursor/settings.json',
     extensions: '~/.cursor/extensions',
-    // Windows paths would be different
+    // Windows: %APPDATA%/Cursor, Linux: ~/.config/Cursor
     windowsConfig: '%APPDATA%/Cursor',
   }
 
@@ -85,13 +88,16 @@ export class CursorAdapter extends BaseHarnessAdapter {
   // ============================================
 
   async detect(): Promise<DetectionResult> {
+    // TODO: Implement actual filesystem detection via backend service
+    // Currently returns mock data for UI development
     const configPaths: HarnessConfigPaths = {
       settings: this.basePaths.settings,
       skills: this.basePaths.extensions,
       projectConfig: '.cursorrules',
     }
 
-    // Simulate detection - in production, would check if files exist
+    // TODO: Check if Cursor config files actually exist
+    // For now, returns true to enable UI development
     return {
       type: this.type,
       detected: true,
@@ -131,7 +137,8 @@ export class CursorAdapter extends BaseHarnessAdapter {
   // ============================================
 
   async listSkills(): Promise<SkillSummary[]> {
-    // Cursor "skills" are primarily .cursorrules files and extensions
+    // TODO: Scan ~/.cursor/extensions/ and find .cursorrules files via backend
+    // Currently returns mock data for UI development
     return [
       {
         id: 'cursorrules-project-a',
