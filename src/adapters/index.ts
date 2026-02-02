@@ -13,10 +13,13 @@ export { adapterRegistry, getAdapter, registerAdapter } from './registry'
 
 // Harness-specific adapters
 export { ClaudeCodeAdapter, createClaudeCodeAdapter } from './claude-code'
+export { CursorAdapter, createCursorAdapter } from './cursor'
 
 // Register all adapters
 import { registerAdapter } from './registry'
 import { createClaudeCodeAdapter } from './claude-code'
+import { createCursorAdapter } from './cursor'
 
-// Auto-register Claude Code adapter
+// Auto-register adapters
 registerAdapter('claude-code', 'Claude Code', createClaudeCodeAdapter)
+registerAdapter('cursor', 'Cursor', createCursorAdapter)
