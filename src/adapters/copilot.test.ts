@@ -66,6 +66,8 @@ describe('CopilotAdapter', () => {
       })
       expect(skill.id).toBe('instructions-test-instructions')
       expect(skill.status).toBe('enabled')
+      expect(skill.content).toBe('# Instructions\n\nYou are a helpful assistant.')
+      expect(skill.metadata.description).toBe('Test copilot instructions')
     })
 
     it('should update an existing skill', async () => {
@@ -118,6 +120,8 @@ describe('CopilotAdapter', () => {
       })
       expect(hook.id).toBe('test-hook')
       expect(hook.status).toBe('enabled')
+      expect(hook.scriptContent).toBe('#!/bin/bash\necho "test"')
+      expect(hook.description).toBe('A test hook')
     })
 
     it('should update an existing hook', async () => {
