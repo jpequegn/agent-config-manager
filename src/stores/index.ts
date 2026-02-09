@@ -41,3 +41,12 @@ export {
   ONBOARDING_STEPS,
   STEP_INFO,
 } from './onboarding-store'
+
+// Project context store
+export {
+  useProjectContextStore,
+  useProjects,
+  useSelectedProject,
+  useSelectedFile,
+  useIsProjectScanning,
+} from './project-context-store'

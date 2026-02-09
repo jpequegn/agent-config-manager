@@ -1,4 +1,4 @@
 // Memory feature
 // Session memory, learnings, project context management
 
-export {}
+export { ProjectContextPage } from './project-context'

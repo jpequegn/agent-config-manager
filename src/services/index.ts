@@ -8,3 +8,6 @@ export * from './filesystem'
 
 // Detection service
 export * from './detection'
+
+// Project context service
+export * from './project-context'
