@@ -11,3 +11,6 @@ export * from './detection'
 
 // Project context service
 export * from './project-context'
+
+// Learnings service
+export * from './learnings'

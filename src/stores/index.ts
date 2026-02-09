@@ -50,3 +50,11 @@ export {
   useSelectedFile,
   useIsProjectScanning,
 } from './project-context-store'
+
+// Learnings store
+export {
+  useLearningsStore,
+  useLearnings,
+  useSelectedLearning,
+  useIsLearningsLoading,
+} from './learnings-store'
