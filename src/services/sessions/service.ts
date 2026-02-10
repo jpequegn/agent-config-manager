@@ -34,15 +34,24 @@ const MOCK_SESSIONS: Session[] = [
       {
         id: 'msg-001-2',
         role: 'assistant',
-        content:
-          "I'll create a service that scans project directories for context files like CLAUDE.md, .cursorrules, and .github/copilot-instructions.md.",
+        content: `I'll create a service that scans project directories for context files. Here's the interface:
+
+\`\`\`typescript
+export async function scanProjects(): Promise<ProjectContext[]> {
+  const homeDir = await getHomeDirectory()
+  const codeDirs = await listDirectories(path.join(homeDir, 'Code'))
+  return Promise.all(codeDirs.map(scanSingleProject))
+}
+\`\`\`
+
+This walks through each project directory and checks for known context files like CLAUDE.md, .cursorrules, and .github/copilot-instructions.md.`,
         timestamp: new Date(Date.now() - 7190000),
         toolCalls: [
           {
             id: 'tc-001',
             name: 'Write',
             input: { file_path: 'src/services/project-context/service.ts' },
-            output: 'File created',
+            output: 'File created successfully at src/services/project-context/service.ts',
             status: 'success',
             duration: 150,
             timestamp: new Date(Date.now() - 7185000),
@@ -53,6 +62,11 @@ const MOCK_SESSIONS: Session[] = [
             type: 'create',
             path: 'src/services/project-context/service.ts',
             linesAdded: 120,
+            diff: `+export async function scanProjects(): Promise<ProjectContext[]> {
++  const homeDir = await getHomeDirectory()
++  const codeDirs = await listDirectories(path.join(homeDir, 'Code'))
++  return Promise.all(codeDirs.map(scanSingleProject))
++}`,
           },
         ],
       },
@@ -65,8 +79,22 @@ const MOCK_SESSIONS: Session[] = [
       {
         id: 'msg-001-4',
         role: 'assistant',
-        content:
-          "I've added harness filtering to the scanner. It now accepts an optional harness parameter.",
+        content: `I've added harness filtering to the scanner:
+
+\`\`\`typescript
+export async function scanProjects(options?: {
+  harness?: HarnessType
+}): Promise<ProjectContext[]> {
+  let projects = await scanAllProjects()
+  if (options?.harness) {
+    projects = projects.map(p => ({
+      ...p,
+      contextFiles: p.contextFiles.filter(f => f.harness === options.harness)
+    })).filter(p => p.contextFiles.length > 0)
+  }
+  return projects
+}
+\`\`\``,
         timestamp: new Date(Date.now() - 6990000),
         fileChanges: [
           {
@@ -74,6 +102,21 @@ const MOCK_SESSIONS: Session[] = [
             path: 'src/services/project-context/service.ts',
             linesAdded: 15,
             linesRemoved: 3,
+            diff: `-export async function scanProjects(): Promise<ProjectContext[]> {
+-  const homeDir = await getHomeDirectory()
+-  return scanAllProjects()
++export async function scanProjects(options?: {
++  harness?: HarnessType
++}): Promise<ProjectContext[]> {
++  let projects = await scanAllProjects()
++  if (options?.harness) {
++    projects = projects.map(p => ({
++      ...p,
++      contextFiles: p.contextFiles.filter(f => f.harness === options.harness)
++    })).filter(p => p.contextFiles.length > 0)
++  }
++  return projects
+ }`,
           },
         ],
       },
@@ -118,7 +161,15 @@ const MOCK_SESSIONS: Session[] = [
             id: 'tc-002',
             name: 'Bash',
             input: { command: 'bun run test:run -- --reporter=verbose' },
-            output: 'FAIL: localStorage.setItem is undefined',
+            output: `FAIL  src/stores/project-context-store.test.ts
+  ● ProjectContextStore > should start with defaults
+    TypeError: localStorage.setItem is not a function
+
+      at node_modules/zustand/middleware.js:42:19
+      at Object.<anonymous> (src/stores/project-context-store.ts:48:1)
+
+Test Suites: 1 failed, 21 passed, 22 total
+Tests:       9 failed, 371 passed, 380 total`,
             status: 'success',
             duration: 5000,
             timestamp: new Date(Date.now() - 86385000),
@@ -128,8 +179,21 @@ const MOCK_SESSIONS: Session[] = [
       {
         id: 'msg-002-3',
         role: 'assistant',
-        content:
-          'The fix is to remove the persist middleware from stores used in tests, or mock localStorage in the test setup.',
+        content: `The fix is to remove the \`persist\` middleware from stores that are tested in jsdom. Here's the change:
+
+\`\`\`typescript
+// Before (broken in jsdom):
+export const useProjectContextStore = create<Store>()(
+  devtools(persist((set) => ({ ... }), { name: 'store' }))
+)
+
+// After (works in jsdom):
+export const useProjectContextStore = create<Store>()(
+  devtools((set) => ({ ... }), { name: 'ProjectContextStore' })
+)
+\`\`\`
+
+This removes the localStorage dependency while keeping Redux DevTools support.`,
         timestamp: new Date(Date.now() - 86300000),
         fileChanges: [
           {
@@ -137,6 +201,24 @@ const MOCK_SESSIONS: Session[] = [
             path: 'src/stores/project-context-store.ts',
             linesAdded: 2,
             linesRemoved: 8,
+            diff: `-import { devtools, persist } from 'zustand/middleware'
++import { devtools } from 'zustand/middleware'
+
+ export const useProjectContextStore = create<Store>()(
+-  devtools(
+-    persist(
+-      (set) => ({
+-        ...initialState,
+-      }),
+-      { name: 'project-context-store' }
+-    ),
++  devtools(
++    (set) => ({
++      ...initialState,
++    }),
+     { name: 'ProjectContextStore' }
+   )
+ )`,
           },
         ],
       },

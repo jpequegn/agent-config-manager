@@ -1,8 +1,10 @@
 /**
  * SessionDetail Component
  * Shows the full conversation and metadata of a selected session
+ * with collapsible tool calls, code block highlighting, and scroll-to-message
  */
 
+import { useState, useRef, useEffect } from 'react'
 import {
   MessageSquare,
   Calendar,
@@ -13,10 +15,16 @@ import {
   Bot,
   Wrench,
   FileCode,
+  ChevronDown,
+  ChevronRight,
+  ArrowUp,
+  Copy,
+  Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { useSelectedSession } from '@/stores'
-import type { HarnessType, Message } from '@/types'
+import type { HarnessType, Message, ToolCall, FileChange } from '@/types'
 
 /** Harness badge colors */
 const HARNESS_COLORS: Record<HarnessType, string> = {
@@ -39,13 +47,248 @@ function formatDuration(ms: number): string {
   return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
 }
 
+/** Parse content into segments of text and code blocks */
+interface ContentSegment {
+  type: 'text' | 'code'
+  content: string
+  language?: string
+}
+
+function parseContent(text: string): ContentSegment[] {
+  const segments: ContentSegment[] = []
+  const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    // Add text before this code block
+    if (match.index > lastIndex) {
+      segments.push({ type: 'text', content: text.slice(lastIndex, match.index) })
+    }
+    // Add the code block
+    segments.push({
+      type: 'code',
+      content: match[2].trim(),
+      language: match[1] || undefined,
+    })
+    lastIndex = match.index + match[0].length
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', content: text.slice(lastIndex) })
+  }
+
+  return segments
+}
+
+/** Code block with copy button and language label */
+function CodeBlock({ content, language }: { content: string; language?: string }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    navigator.clipboard.writeText(content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="group relative my-2 overflow-hidden rounded-md border border-border/50 bg-background">
+      <div className="flex items-center justify-between bg-muted/50 px-3 py-1">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {language || 'code'}
+        </span>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+      </div>
+      <pre className="overflow-x-auto p-3 text-xs leading-relaxed">
+        <code>{content}</code>
+      </pre>
+    </div>
+  )
+}
+
+/** Render message content with code block highlighting */
+function MessageContent({ content }: { content: string }) {
+  const segments = parseContent(content)
+
+  return (
+    <div className="text-sm leading-relaxed">
+      {segments.map((segment, i) =>
+        segment.type === 'code' ? (
+          <CodeBlock key={i} content={segment.content} language={segment.language} />
+        ) : (
+          <span key={i} className="whitespace-pre-wrap">
+            {segment.content}
+          </span>
+        )
+      )}
+    </div>
+  )
+}
+
+/** Collapsible tool call block */
+function ToolCallBlock({ toolCall }: { toolCall: ToolCall }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="mt-2 overflow-hidden rounded-md border border-border/50 bg-background/50">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-xs transition-colors hover:bg-muted/50"
+      >
+        {expanded ? (
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-3 w-3 text-muted-foreground" />
+        )}
+        <Wrench className="h-3 w-3 text-muted-foreground" />
+        <span className="font-mono font-medium">{toolCall.name}</span>
+        {toolCall.duration && (
+          <span className="text-muted-foreground">({toolCall.duration}ms)</span>
+        )}
+        <span
+          className={cn(
+            'ml-auto rounded-full px-1.5 py-0.5 text-[10px]',
+            toolCall.status === 'success'
+              ? 'bg-green-500/20 text-green-400'
+              : toolCall.status === 'error'
+                ? 'bg-red-500/20 text-red-400'
+                : 'bg-yellow-500/20 text-yellow-400'
+          )}
+        >
+          {toolCall.status}
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border/50 px-2.5 py-2 text-xs">
+          {/* Input */}
+          <div className="mb-2">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Input
+            </span>
+            <pre className="mt-1 overflow-x-auto rounded bg-muted/50 p-2 font-mono text-[11px] leading-relaxed">
+              {JSON.stringify(toolCall.input, null, 2)}
+            </pre>
+          </div>
+
+          {/* Output */}
+          {toolCall.output && (
+            <div>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Output
+              </span>
+              <pre className="mt-1 overflow-x-auto rounded bg-muted/50 p-2 font-mono text-[11px] leading-relaxed">
+                {toolCall.output}
+              </pre>
+            </div>
+          )}
+
+          {/* Error */}
+          {toolCall.error && (
+            <div>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-red-400">
+                Error
+              </span>
+              <pre className="mt-1 overflow-x-auto rounded bg-red-500/10 p-2 font-mono text-[11px] leading-relaxed text-red-400">
+                {toolCall.error}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** File change block with optional diff */
+function FileChangeBlock({ change }: { change: FileChange }) {
+  const [showDiff, setShowDiff] = useState(false)
+
+  return (
+    <div className="mt-1 overflow-hidden rounded-md border border-border/50 bg-background/50">
+      <button
+        onClick={() => change.diff && setShowDiff(!showDiff)}
+        className={cn(
+          'flex w-full items-center gap-1.5 px-2.5 py-1.5 text-xs',
+          change.diff && 'cursor-pointer transition-colors hover:bg-muted/50'
+        )}
+      >
+        {change.diff ? (
+          showDiff ? (
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-3 w-3 text-muted-foreground" />
+          )
+        ) : (
+          <FileCode className="h-3 w-3 text-muted-foreground" />
+        )}
+        <span className="font-mono">{change.path}</span>
+        <span
+          className={cn(
+            'ml-auto rounded-full px-1.5 py-0.5 text-[10px]',
+            change.type === 'create'
+              ? 'bg-green-500/20 text-green-400'
+              : change.type === 'delete'
+                ? 'bg-red-500/20 text-red-400'
+                : 'bg-blue-500/20 text-blue-400'
+          )}
+        >
+          {change.type}
+        </span>
+        {(change.linesAdded || change.linesRemoved) && (
+          <span className="text-muted-foreground">
+            {change.linesAdded ? (
+              <span className="text-green-400">+{change.linesAdded}</span>
+            ) : null}
+            {change.linesRemoved ? (
+              <span className="ml-1 text-red-400">-{change.linesRemoved}</span>
+            ) : null}
+          </span>
+        )}
+      </button>
+
+      {showDiff && change.diff && (
+        <div className="border-t border-border/50">
+          <pre className="overflow-x-auto p-2.5 font-mono text-[11px] leading-relaxed">
+            {change.diff.split('\n').map((line, i) => (
+              <div
+                key={i}
+                className={cn(
+                  'px-1',
+                  line.startsWith('+') && 'bg-green-500/10 text-green-400',
+                  line.startsWith('-') && 'bg-red-500/10 text-red-400'
+                )}
+              >
+                {line}
+              </div>
+            ))}
+          </pre>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** Single message bubble */
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({
+  message,
+  messageRef,
+}: {
+  message: Message
+  messageRef: (el: HTMLDivElement | null) => void
+}) {
   const isUser = message.role === 'user'
   const isSystem = message.role === 'system'
 
   return (
-    <div className={cn('flex gap-3', isUser ? 'flex-row-reverse' : 'flex-row')}>
+    <div ref={messageRef} className={cn('flex gap-3', isUser ? 'flex-row-reverse' : 'flex-row')}>
       <div
         className={cn(
           'flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
@@ -64,65 +307,22 @@ function MessageBubble({ message }: { message: Message }) {
           isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
         )}
       >
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+        <MessageContent content={message.content} />
 
-        {/* Tool calls */}
+        {/* Collapsible tool calls */}
         {message.toolCalls && message.toolCalls.length > 0 && (
-          <div className="mt-2 space-y-1">
+          <div className="space-y-1">
             {message.toolCalls.map((tc) => (
-              <div
-                key={tc.id}
-                className="flex items-center gap-1.5 rounded bg-background/50 px-2 py-1 text-xs"
-              >
-                <Wrench className="h-3 w-3 text-muted-foreground" />
-                <span className="font-mono">{tc.name}</span>
-                {tc.duration && <span className="text-muted-foreground">({tc.duration}ms)</span>}
-                <span
-                  className={cn(
-                    'ml-auto rounded-full px-1.5 py-0.5 text-[10px]',
-                    tc.status === 'success'
-                      ? 'bg-green-500/20 text-green-400'
-                      : tc.status === 'error'
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-yellow-500/20 text-yellow-400'
-                  )}
-                >
-                  {tc.status}
-                </span>
-              </div>
+              <ToolCallBlock key={tc.id} toolCall={tc} />
             ))}
           </div>
         )}
 
-        {/* File changes */}
+        {/* File changes with diffs */}
         {message.fileChanges && message.fileChanges.length > 0 && (
-          <div className="mt-2 space-y-1">
+          <div className="space-y-1">
             {message.fileChanges.map((fc, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-1.5 rounded bg-background/50 px-2 py-1 text-xs"
-              >
-                <FileCode className="h-3 w-3 text-muted-foreground" />
-                <span className="font-mono">{fc.path}</span>
-                <span
-                  className={cn(
-                    'ml-auto rounded-full px-1.5 py-0.5 text-[10px]',
-                    fc.type === 'create'
-                      ? 'bg-green-500/20 text-green-400'
-                      : fc.type === 'delete'
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-blue-500/20 text-blue-400'
-                  )}
-                >
-                  {fc.type}
-                </span>
-                {(fc.linesAdded || fc.linesRemoved) && (
-                  <span className="text-muted-foreground">
-                    {fc.linesAdded ? `+${fc.linesAdded}` : ''}
-                    {fc.linesRemoved ? ` -${fc.linesRemoved}` : ''}
-                  </span>
-                )}
-              </div>
+              <FileChangeBlock key={i} change={fc} />
             ))}
           </div>
         )}
@@ -135,8 +335,65 @@ function MessageBubble({ message }: { message: Message }) {
   )
 }
 
+/** Message jump bar - shows message index for quick navigation */
+function MessageJumpBar({
+  messages,
+  onJump,
+}: {
+  messages: Message[]
+  onJump: (index: number) => void
+}) {
+  return (
+    <div className="flex items-center gap-1 border-t bg-muted/30 px-4 py-2">
+      <span className="mr-2 text-xs text-muted-foreground">Jump to:</span>
+      {messages.map((msg, i) => (
+        <button
+          key={msg.id}
+          onClick={() => onJump(i)}
+          className={cn(
+            'flex h-6 w-6 items-center justify-center rounded text-[10px] font-medium transition-colors',
+            msg.role === 'user'
+              ? 'bg-primary/20 text-primary hover:bg-primary/30'
+              : 'bg-accent/50 text-accent-foreground hover:bg-accent'
+          )}
+          title={`${msg.role}: ${msg.content.slice(0, 50)}...`}
+        >
+          {i + 1}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function SessionDetail() {
   const session = useSelectedSession()
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map())
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
+  // Track scroll position for scroll-to-top button
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container) return
+
+    function handleScroll() {
+      setShowScrollTop((container?.scrollTop ?? 0) > 200)
+    }
+
+    container.addEventListener('scroll', handleScroll)
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [session])
+
+  function scrollToMessage(index: number) {
+    const el = messageRefs.current.get(index)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  function scrollToTop() {
+    messagesContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   if (!session) {
     return (
@@ -148,7 +405,7 @@ export function SessionDetail() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-auto">
+    <div className="flex h-full flex-col">
       {/* Header */}
       <div className="border-b px-6 py-4">
         <div className="flex items-center gap-2">
@@ -213,11 +470,35 @@ export function SessionDetail() {
         )}
       </div>
 
+      {/* Message jump bar */}
+      {session.messages.length > 2 && (
+        <MessageJumpBar messages={session.messages} onJump={scrollToMessage} />
+      )}
+
       {/* Messages */}
-      <div className="flex-1 space-y-4 p-6">
-        {session.messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
+      <div ref={messagesContainerRef} className="relative flex-1 space-y-4 overflow-auto p-6">
+        {session.messages.map((message, index) => (
+          <MessageBubble
+            key={message.id}
+            message={message}
+            messageRef={(el) => {
+              if (el) messageRefs.current.set(index, el)
+              else messageRefs.current.delete(index)
+            }}
+          />
         ))}
+
+        {/* Scroll to top button */}
+        {showScrollTop && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="fixed bottom-6 right-6 z-10 h-8 w-8 rounded-full shadow-md"
+            onClick={scrollToTop}
+          >
+            <ArrowUp className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   )
