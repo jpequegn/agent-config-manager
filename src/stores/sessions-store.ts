@@ -1,11 +1,14 @@
 /**
  * Sessions Store
- * Manages session browser state: list, selection, search, filters
+ * Manages session browser state: list, selection, search, filters, sorting
  */
 
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { HarnessType, Session, SessionSummary } from '@/types'
+
+/** Sort field options */
+export type SessionSortBy = 'recent' | 'duration' | 'messages'
 
 /** Sessions store state */
 interface SessionsState {
@@ -21,6 +24,14 @@ interface SessionsState {
   filterHarness: HarnessType | null
   /** Project filter */
   filterProject: string | null
+  /** Date range start */
+  filterDateStart: Date | null
+  /** Date range end */
+  filterDateEnd: Date | null
+  /** Sort field */
+  sortBy: SessionSortBy
+  /** Sort direction */
+  sortOrder: 'asc' | 'desc'
 }
 
 /** Sessions store actions */
@@ -31,6 +42,10 @@ interface SessionsActions {
   setSearchQuery: (query: string) => void
   setFilterHarness: (harness: HarnessType | null) => void
   setFilterProject: (project: string | null) => void
+  setFilterDateStart: (date: Date | null) => void
+  setFilterDateEnd: (date: Date | null) => void
+  setSortBy: (sortBy: SessionSortBy) => void
+  setSortOrder: (order: 'asc' | 'desc') => void
   clearFilters: () => void
 }
 
@@ -43,6 +58,10 @@ const initialState: SessionsState = {
   searchQuery: '',
   filterHarness: null,
   filterProject: null,
+  filterDateStart: null,
+  filterDateEnd: null,
+  sortBy: 'recent',
+  sortOrder: 'desc',
 }
 
 export const useSessionsStore = create<SessionsStore>()(
@@ -62,8 +81,26 @@ export const useSessionsStore = create<SessionsStore>()(
 
       setFilterProject: (project) => set({ filterProject: project }, false, 'setFilterProject'),
 
+      setFilterDateStart: (date) => set({ filterDateStart: date }, false, 'setFilterDateStart'),
+
+      setFilterDateEnd: (date) => set({ filterDateEnd: date }, false, 'setFilterDateEnd'),
+
+      setSortBy: (sortBy) => set({ sortBy }, false, 'setSortBy'),
+
+      setSortOrder: (order) => set({ sortOrder: order }, false, 'setSortOrder'),
+
       clearFilters: () =>
-        set({ searchQuery: '', filterHarness: null, filterProject: null }, false, 'clearFilters'),
+        set(
+          {
+            searchQuery: '',
+            filterHarness: null,
+            filterProject: null,
+            filterDateStart: null,
+            filterDateEnd: null,
+          },
+          false,
+          'clearFilters'
+        ),
     }),
     { name: 'SessionsStore' }
   )

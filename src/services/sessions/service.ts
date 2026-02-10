@@ -5,12 +5,23 @@
 
 import type { HarnessType, Session, SessionSummary, SessionFilterOptions } from '@/types'
 
+/** Sort field for sessions */
+export type SessionSortField = 'recent' | 'duration' | 'messages'
+
+/** Sort options for sessions list */
+export interface SessionSortOptions {
+  sortBy?: SessionSortField
+  sortOrder?: 'asc' | 'desc'
+}
+
 /** Session aggregate statistics */
 export interface SessionListStats {
   totalSessions: number
   activeSessions: number
   totalMessages: number
   byHarness: { harness: HarnessType; count: number }[]
+  /** Unique project names across all sessions */
+  projects: string[]
 }
 
 /** Mock session data */
@@ -689,9 +700,12 @@ This removes the localStorage dependency while keeping Redux DevTools support.`,
 ]
 
 /**
- * List sessions, optionally filtered.
+ * List sessions, optionally filtered and sorted.
  */
-export async function listSessions(options?: SessionFilterOptions): Promise<SessionSummary[]> {
+export async function listSessions(
+  options?: SessionFilterOptions,
+  sort?: SessionSortOptions
+): Promise<SessionSummary[]> {
   await new Promise((resolve) => setTimeout(resolve, 150))
 
   let filtered = MOCK_SESSIONS
@@ -702,7 +716,7 @@ export async function listSessions(options?: SessionFilterOptions): Promise<Sess
   }
   if (options?.project) {
     const q = options.project.toLowerCase()
-    filtered = filtered.filter((s) => s.metadata.project?.toLowerCase().includes(q))
+    filtered = filtered.filter((s) => s.metadata.project?.toLowerCase() === q)
   }
   if (options?.startDate) {
     filtered = filtered.filter((s) => s.startedAt >= options.startDate!)
@@ -719,14 +733,32 @@ export async function listSessions(options?: SessionFilterOptions): Promise<Sess
       (s) =>
         s.metadata.title.toLowerCase().includes(q) ||
         s.metadata.project?.toLowerCase().includes(q) ||
-        s.metadata.tags?.some((t) => t.toLowerCase().includes(q))
+        s.metadata.tags?.some((t) => t.toLowerCase().includes(q)) ||
+        s.messages.some((m) => m.content.toLowerCase().includes(q))
     )
   }
   if (options?.activeOnly) {
     filtered = filtered.filter((s) => s.isActive)
   }
 
-  return filtered.map((s) => ({
+  // Sort
+  const sortBy = sort?.sortBy ?? 'recent'
+  const sortOrder = sort?.sortOrder ?? 'desc'
+  const multiplier = sortOrder === 'desc' ? -1 : 1
+
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'duration':
+        return (a.stats.duration - b.stats.duration) * multiplier
+      case 'messages':
+        return (a.stats.messageCount - b.stats.messageCount) * multiplier
+      case 'recent':
+      default:
+        return (a.startedAt.getTime() - b.startedAt.getTime()) * multiplier
+    }
+  })
+
+  return sorted.map((s) => ({
     id: s.id,
     harness: s.harness,
     title: s.metadata.title,
@@ -762,6 +794,12 @@ export async function getSessionListStats(): Promise<SessionListStats> {
     totalMessages += s.stats.messageCount
   }
 
+  const projects = [
+    ...new Set(
+      MOCK_SESSIONS.map((s) => s.metadata.project).filter((p): p is string => p !== undefined)
+    ),
+  ].sort()
+
   return {
     totalSessions: MOCK_SESSIONS.length,
     activeSessions: MOCK_SESSIONS.filter((s) => s.isActive).length,
@@ -770,5 +808,6 @@ export async function getSessionListStats(): Promise<SessionListStats> {
       harness,
       count,
     })),
+    projects,
   }
 }

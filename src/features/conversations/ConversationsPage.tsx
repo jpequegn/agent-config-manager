@@ -19,26 +19,35 @@ export function ConversationsPage() {
   const searchQuery = useSessionsStore((s) => s.searchQuery)
   const filterHarness = useSessionsStore((s) => s.filterHarness)
   const filterProject = useSessionsStore((s) => s.filterProject)
+  const filterDateStart = useSessionsStore((s) => s.filterDateStart)
+  const filterDateEnd = useSessionsStore((s) => s.filterDateEnd)
+  const sortBy = useSessionsStore((s) => s.sortBy)
+  const sortOrder = useSessionsStore((s) => s.sortOrder)
 
-  /** Load sessions with current filters */
+  /** Load sessions with current filters and sort */
   async function handleLoad() {
     setIsLoading(true)
     try {
-      const results = await listSessions({
-        harness: filterHarness ?? undefined,
-        project: filterProject ?? undefined,
-        searchText: searchQuery || undefined,
-      })
+      const results = await listSessions(
+        {
+          harness: filterHarness ?? undefined,
+          project: filterProject ?? undefined,
+          searchText: searchQuery || undefined,
+          startDate: filterDateStart ?? undefined,
+          endDate: filterDateEnd ?? undefined,
+        },
+        { sortBy, sortOrder }
+      )
       setSessions(results)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Auto-load on mount and when filters change
+  // Auto-load on mount and when filters/sort change
   useEffect(() => {
     handleLoad()
-  }, [searchQuery, filterHarness, filterProject]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchQuery, filterHarness, filterProject, filterDateStart, filterDateEnd, sortBy, sortOrder]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex h-full flex-col">

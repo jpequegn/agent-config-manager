@@ -16,6 +16,10 @@ describe('ConversationsPage', () => {
     store.setSearchQuery('')
     store.setFilterHarness(null)
     store.setFilterProject(null)
+    store.setFilterDateStart(null)
+    store.setFilterDateEnd(null)
+    store.setSortBy('recent')
+    store.setSortOrder('desc')
   })
 
   it('should render the page header', () => {
@@ -54,5 +58,20 @@ describe('ConversationsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('10 sessions')).toBeInTheDocument()
     })
+  })
+
+  it('should show sort button', () => {
+    render(<ConversationsPage />)
+    expect(screen.getByRole('button', { name: /most recent/i })).toBeInTheDocument()
+  })
+
+  it('should show project filter button', () => {
+    render(<ConversationsPage />)
+    expect(screen.getByRole('button', { name: /project/i })).toBeInTheDocument()
+  })
+
+  it('should show date filter button', () => {
+    render(<ConversationsPage />)
+    expect(screen.getByRole('button', { name: /date/i })).toBeInTheDocument()
   })
 })
