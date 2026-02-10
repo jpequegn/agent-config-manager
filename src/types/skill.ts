@@ -65,6 +65,18 @@ export interface SkillStats {
   successRate?: number
 }
 
+/** Version history entry for a skill */
+export interface SkillHistoryEntry {
+  /** Version string */
+  version: string
+  /** When this version was created */
+  date: Date
+  /** Summary of changes */
+  summary: string
+  /** Author of the change */
+  author?: string
+}
+
 /** Complete skill definition */
 export interface Skill {
   /** Unique identifier */
@@ -77,10 +89,14 @@ export interface Skill {
   metadata: SkillMetadata
   /** Full markdown content */
   content: string
+  /** JSON schema if applicable */
+  schema?: Record<string, unknown>
   /** Current status */
   status: SkillStatus
   /** Usage statistics */
   stats: SkillStats
+  /** Version history */
+  history?: SkillHistoryEntry[]
   /** Creation timestamp */
   createdAt: Date
   /** Last modification timestamp */

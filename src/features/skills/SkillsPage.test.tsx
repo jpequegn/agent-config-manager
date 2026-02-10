@@ -18,6 +18,7 @@ describe('SkillsPage', () => {
     store.setFilterCategory(null)
     store.setGroupBy('harness')
     store.collapseAll()
+    store.setActiveTab('content')
   })
 
   it('should render the page header', () => {

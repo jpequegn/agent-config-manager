@@ -53,7 +53,15 @@ const MOCK_SKILLS: Skill[] = [
       version: '1.2.0',
     },
     content:
-      '# Commit Skill\n\nCreates well-formatted git commits following conventional commit format.',
+      '# Commit Skill\n\nCreates well-formatted git commits following conventional commit format.\n\n## Usage\n\nRun `/commit` or say "commit changes" to invoke.\n\n## Behavior\n\n1. Runs `git diff --staged` to detect changes\n2. Analyzes the diff for semantic meaning\n3. Generates a conventional commit message\n4. Prompts for confirmation before committing',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', description: 'Custom commit message override' },
+        scope: { type: 'string', description: 'Commit scope (e.g. feat, fix, chore)' },
+        amend: { type: 'boolean', description: 'Whether to amend the last commit', default: false },
+      },
+    },
     status: 'enabled',
     stats: {
       invocationCount: 142,
@@ -61,6 +69,25 @@ const MOCK_SKILLS: Skill[] = [
       avgExecutionTime: 2500,
       successRate: 0.98,
     },
+    history: [
+      {
+        version: '1.2.0',
+        date: new Date(Date.now() - 86400000),
+        summary: 'Added amend support and scope detection',
+      },
+      {
+        version: '1.1.0',
+        date: new Date(Date.now() - 86400000 * 15),
+        summary: 'Improved diff analysis for monorepos',
+        author: 'system',
+      },
+      {
+        version: '1.0.0',
+        date: new Date(Date.now() - 86400000 * 30),
+        summary: 'Initial release with conventional commits',
+        author: 'user',
+      },
+    ],
     createdAt: new Date(Date.now() - 86400000 * 30),
     updatedAt: new Date(Date.now() - 86400000),
   },
@@ -79,7 +106,26 @@ const MOCK_SKILLS: Skill[] = [
       tags: ['git', 'review', 'pull-request'],
       version: '2.0.1',
     },
-    content: '# Review PR\n\nProvides detailed code review with security and quality analysis.',
+    content:
+      '# Review PR\n\nProvides detailed code review with security and quality analysis.\n\n## Features\n\n- Code quality analysis\n- Security vulnerability scanning\n- Performance suggestions\n- Style consistency checks',
+    schema: {
+      type: 'object',
+      properties: {
+        prNumber: { type: 'number', description: 'PR number to review' },
+        depth: {
+          type: 'string',
+          enum: ['quick', 'standard', 'thorough'],
+          description: 'Review depth',
+          default: 'standard',
+        },
+        focus: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Areas to focus on (security, performance, style)',
+        },
+      },
+      required: ['prNumber'],
+    },
     status: 'enabled',
     stats: {
       invocationCount: 87,
@@ -87,6 +133,25 @@ const MOCK_SKILLS: Skill[] = [
       avgExecutionTime: 8000,
       successRate: 0.95,
     },
+    history: [
+      {
+        version: '2.0.1',
+        date: new Date(Date.now() - 86400000 * 3),
+        summary: 'Fixed false positive in SQL injection detection',
+      },
+      {
+        version: '2.0.0',
+        date: new Date(Date.now() - 86400000 * 20),
+        summary: 'Added security scanning and focus areas',
+        author: 'system',
+      },
+      {
+        version: '1.0.0',
+        date: new Date(Date.now() - 86400000 * 60),
+        summary: 'Initial code review skill',
+        author: 'user',
+      },
+    ],
     createdAt: new Date(Date.now() - 86400000 * 60),
     updatedAt: new Date(Date.now() - 86400000 * 3),
   },
@@ -105,7 +170,8 @@ const MOCK_SKILLS: Skill[] = [
       tags: ['web', 'research', 'analysis'],
       version: '1.5.0',
     },
-    content: '# Research\n\nMulti-source research with parallel agent execution.',
+    content:
+      '# Research\n\nMulti-source research with parallel agent execution.\n\n## How It Works\n\n1. Decomposes research query into sub-questions\n2. Launches parallel agents for each sub-question\n3. Synthesizes findings into a comprehensive report',
     status: 'enabled',
     stats: {
       invocationCount: 56,
@@ -113,6 +179,18 @@ const MOCK_SKILLS: Skill[] = [
       avgExecutionTime: 15000,
       successRate: 0.92,
     },
+    history: [
+      {
+        version: '1.5.0',
+        date: new Date(Date.now() - 86400000 * 5),
+        summary: 'Added parallel agent execution',
+      },
+      {
+        version: '1.0.0',
+        date: new Date(Date.now() - 86400000 * 45),
+        summary: 'Initial research skill',
+      },
+    ],
     createdAt: new Date(Date.now() - 86400000 * 45),
     updatedAt: new Date(Date.now() - 86400000 * 5),
   },
@@ -128,7 +206,19 @@ const MOCK_SKILLS: Skill[] = [
       tags: ['security', 'audit', 'vulnerability'],
       version: '1.0.0',
     },
-    content: '# Security Audit\n\nScans code for OWASP top 10 vulnerabilities.',
+    content:
+      '# Security Audit\n\nScans code for OWASP top 10 vulnerabilities.\n\n## Checks\n\n- SQL injection\n- XSS vulnerabilities\n- CSRF protection\n- Authentication flaws\n- Sensitive data exposure',
+    schema: {
+      type: 'object',
+      properties: {
+        targetPath: { type: 'string', description: 'Path to scan' },
+        severity: {
+          type: 'string',
+          enum: ['low', 'medium', 'high', 'critical'],
+          description: 'Minimum severity to report',
+        },
+      },
+    },
     status: 'enabled',
     stats: {
       invocationCount: 23,

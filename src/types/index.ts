@@ -21,6 +21,7 @@ export type {
   SkillTrigger,
   SkillMetadata,
   SkillStats,
+  SkillHistoryEntry,
   Skill,
   SkillSummary,
   CreateSkillOptions,

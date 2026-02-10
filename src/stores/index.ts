@@ -69,5 +69,11 @@ export {
 } from './sessions-store'
 
 // Skills store
-export type { SkillGroupBy } from './skills-store'
-export { useSkillsStore, useSkills, useSelectedSkill, useIsSkillsLoading } from './skills-store'
+export type { SkillGroupBy, SkillDetailTab } from './skills-store'
+export {
+  useSkillsStore,
+  useSkills,
+  useSelectedSkill,
+  useIsSkillsLoading,
+  useActiveSkillTab,
+} from './skills-store'
