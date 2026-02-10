@@ -10,6 +10,9 @@ import type { HarnessType, Skill, SkillSummary, SkillCategory } from '@/types'
 /** Tree grouping mode */
 export type SkillGroupBy = 'harness' | 'category'
 
+/** Detail panel tab */
+export type SkillDetailTab = 'content' | 'schema' | 'stats' | 'history'
+
 /** Skills store state */
 interface SkillsState {
   /** List of skill summaries */
@@ -28,6 +31,8 @@ interface SkillsState {
   groupBy: SkillGroupBy
   /** Expanded tree node IDs */
   expandedNodes: Set<string>
+  /** Active detail tab */
+  activeTab: SkillDetailTab
 }
 
 /** Skills store actions */
@@ -42,6 +47,7 @@ interface SkillsActions {
   toggleNode: (nodeId: string) => void
   expandAll: () => void
   collapseAll: () => void
+  setActiveTab: (tab: SkillDetailTab) => void
   clearFilters: () => void
 }
 
@@ -56,6 +62,7 @@ const initialState: SkillsState = {
   filterCategory: null,
   groupBy: 'harness',
   expandedNodes: new Set<string>(),
+  activeTab: 'content' as SkillDetailTab,
 }
 
 export const useSkillsStore = create<SkillsStore>()(
@@ -65,7 +72,8 @@ export const useSkillsStore = create<SkillsStore>()(
 
       setSkills: (skills) => set({ skills }, false, 'setSkills'),
 
-      selectSkill: (skill) => set({ selectedSkill: skill }, false, 'selectSkill'),
+      selectSkill: (skill) =>
+        set({ selectedSkill: skill, activeTab: 'content' }, false, 'selectSkill'),
 
       setIsLoading: (isLoading) => set({ isLoading }, false, 'setIsLoading'),
 
@@ -112,6 +120,8 @@ export const useSkillsStore = create<SkillsStore>()(
 
       collapseAll: () => set({ expandedNodes: new Set<string>() }, false, 'collapseAll'),
 
+      setActiveTab: (tab) => set({ activeTab: tab }, false, 'setActiveTab'),
+
       clearFilters: () =>
         set({ searchQuery: '', filterHarness: null, filterCategory: null }, false, 'clearFilters'),
     }),
@@ -123,3 +133,4 @@ export const useSkillsStore = create<SkillsStore>()(
 export const useSkills = () => useSkillsStore((s) => s.skills)
 export const useSelectedSkill = () => useSkillsStore((s) => s.selectedSkill)
 export const useIsSkillsLoading = () => useSkillsStore((s) => s.isLoading)
+export const useActiveSkillTab = () => useSkillsStore((s) => s.activeTab)

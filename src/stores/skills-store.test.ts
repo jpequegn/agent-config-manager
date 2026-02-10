@@ -44,6 +44,7 @@ describe('SkillsStore', () => {
     store.setFilterCategory(null)
     store.setGroupBy('harness')
     store.collapseAll()
+    store.setActiveTab('content')
   })
 
   it('should start with defaults after reset', () => {
@@ -56,6 +57,7 @@ describe('SkillsStore', () => {
     expect(state.filterCategory).toBeNull()
     expect(state.groupBy).toBe('harness')
     expect(state.expandedNodes.size).toBe(0)
+    expect(state.activeTab).toBe('content')
   })
 
   it('should set skills list', () => {
@@ -111,6 +113,19 @@ describe('SkillsStore', () => {
     useSkillsStore.getState().toggleNode('cursor')
     useSkillsStore.getState().collapseAll()
     expect(useSkillsStore.getState().expandedNodes.size).toBe(0)
+  })
+
+  it('should set active tab', () => {
+    useSkillsStore.getState().setActiveTab('stats')
+    expect(useSkillsStore.getState().activeTab).toBe('stats')
+    useSkillsStore.getState().setActiveTab('history')
+    expect(useSkillsStore.getState().activeTab).toBe('history')
+  })
+
+  it('should reset tab to content when selecting a new skill', () => {
+    useSkillsStore.getState().setActiveTab('stats')
+    useSkillsStore.getState().selectSkill(mockSkill)
+    expect(useSkillsStore.getState().activeTab).toBe('content')
   })
 
   it('should clear all filters', () => {
