@@ -5,6 +5,7 @@
 
 import { BookOpen, Calendar, Clock, Tag, Folder } from 'lucide-react'
 import { cn, formatBytes, formatRelativeTime } from '@/lib/utils'
+import { MarkdownRenderer } from '@/components/shared'
 import { useSelectedLearning } from '@/stores'
 import type { LearningCategory } from '@/types'
 
@@ -82,10 +83,8 @@ export function LearningDetail() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-6">
-        <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
-          {learning.content}
-        </pre>
+      <div className="flex-1 overflow-auto p-6">
+        <MarkdownRenderer content={learning.content} />
       </div>
     </div>
   )

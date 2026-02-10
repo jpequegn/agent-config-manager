@@ -18,11 +18,10 @@ import {
   ChevronDown,
   ChevronRight,
   ArrowUp,
-  Copy,
-  Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { MarkdownRenderer } from '@/components/shared'
 import { useSelectedSession } from '@/stores'
 import type { HarnessType, Message, ToolCall, FileChange } from '@/types'
 
@@ -45,91 +44,6 @@ function formatDuration(ms: number): string {
   const hours = Math.floor(minutes / 60)
   const remainingMinutes = minutes % 60
   return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
-}
-
-/** Parse content into segments of text and code blocks */
-interface ContentSegment {
-  type: 'text' | 'code'
-  content: string
-  language?: string
-}
-
-function parseContent(text: string): ContentSegment[] {
-  const segments: ContentSegment[] = []
-  const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g
-  let lastIndex = 0
-  let match: RegExpExecArray | null
-
-  while ((match = codeBlockRegex.exec(text)) !== null) {
-    // Add text before this code block
-    if (match.index > lastIndex) {
-      segments.push({ type: 'text', content: text.slice(lastIndex, match.index) })
-    }
-    // Add the code block
-    segments.push({
-      type: 'code',
-      content: match[2].trim(),
-      language: match[1] || undefined,
-    })
-    lastIndex = match.index + match[0].length
-  }
-
-  // Add remaining text
-  if (lastIndex < text.length) {
-    segments.push({ type: 'text', content: text.slice(lastIndex) })
-  }
-
-  return segments
-}
-
-/** Code block with copy button and language label */
-function CodeBlock({ content, language }: { content: string; language?: string }) {
-  const [copied, setCopied] = useState(false)
-
-  function handleCopy() {
-    navigator.clipboard.writeText(content)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <div className="group relative my-2 overflow-hidden rounded-md border border-border/50 bg-background">
-      <div className="flex items-center justify-between bg-muted/50 px-3 py-1">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          {language || 'code'}
-        </span>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-          {copied ? 'Copied' : 'Copy'}
-        </button>
-      </div>
-      <pre className="overflow-x-auto p-3 text-xs leading-relaxed">
-        <code>{content}</code>
-      </pre>
-    </div>
-  )
-}
-
-/** Render message content with code block highlighting */
-function MessageContent({ content }: { content: string }) {
-  const segments = parseContent(content)
-
-  return (
-    <div className="text-sm leading-relaxed">
-      {segments.map((segment, i) =>
-        segment.type === 'code' ? (
-          <CodeBlock key={i} content={segment.content} language={segment.language} />
-        ) : (
-          <span key={i} className="whitespace-pre-wrap">
-            {segment.content}
-          </span>
-        )
-      )}
-    </div>
-  )
 }
 
 /** Collapsible tool call block */
@@ -307,7 +221,7 @@ function MessageBubble({
           isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
         )}
       >
-        <MessageContent content={message.content} />
+        <MarkdownRenderer content={message.content} compact />
 
         {/* Collapsible tool calls */}
         {message.toolCalls && message.toolCalls.length > 0 && (

@@ -1,4 +1,4 @@
 // Shared components
 // Reusable components used across multiple features
 
-export {}
+export { MarkdownRenderer } from './MarkdownRenderer'
