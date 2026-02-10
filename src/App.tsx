@@ -1,20 +1,21 @@
 import { useState } from 'react'
-import { FolderSearch, BookOpen } from 'lucide-react'
+import { FolderSearch, BookOpen, History } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
 import { ProjectContextPage, LearningsPage } from '@/features/memory'
+import { ConversationsPage } from '@/features/conversations'
 import { cn } from '@/lib/utils'
 
-type MemoryTab = 'project-context' | 'learnings'
+type AppTab = 'project-context' | 'learnings' | 'sessions'
 
-const TABS: { id: MemoryTab; label: string; icon: React.ComponentType<{ className?: string }> }[] =
-  [
-    { id: 'project-context', label: 'Project Context', icon: FolderSearch },
-    { id: 'learnings', label: 'Learnings', icon: BookOpen },
-  ]
+const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'project-context', label: 'Project Context', icon: FolderSearch },
+  { id: 'learnings', label: 'Learnings', icon: BookOpen },
+  { id: 'sessions', label: 'Sessions', icon: History },
+]
 
 function App() {
-  const [activeTab, setActiveTab] = useState<MemoryTab>('project-context')
+  const [activeTab, setActiveTab] = useState<AppTab>('project-context')
 
   return (
     <AppShell
@@ -35,7 +36,9 @@ function App() {
         </div>
       }
     >
-      {activeTab === 'project-context' ? <ProjectContextPage /> : <LearningsPage />}
+      {activeTab === 'project-context' && <ProjectContextPage />}
+      {activeTab === 'learnings' && <LearningsPage />}
+      {activeTab === 'sessions' && <ConversationsPage />}
     </AppShell>
   )
 }

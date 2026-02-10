@@ -14,3 +14,6 @@ export * from './project-context'
 
 // Learnings service
 export * from './learnings'
+
+// Sessions service
+export * from './sessions'
