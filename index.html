@@ -4,7 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Agent Config Manager - Manage and configure AI agent harnesses and settings" />
     <title>Agent Config Manager</title>
+    <style>
+      /* Skip to main content link - visible on keyboard focus */
+      #skip-to-main {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: #000;
+        color: white;
+        padding: 8px;
+        text-decoration: none;
+        z-index: 100;
+        border-radius: 0 0 4px 0;
+      }
+      #skip-to-main:focus {
+        top: 0;
+      }
+    </style>
     <script>
       // Prevent flash of unstyled content (FOUC) by applying theme before render
       ;(function () {
@@ -28,6 +46,8 @@
     </script>
   </head>
   <body>
+    <!-- Skip to main content link for keyboard users -->
+    <a href="#main-content" id="skip-to-main">Skip to main content</a>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

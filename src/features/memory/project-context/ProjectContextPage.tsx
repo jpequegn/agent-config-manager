@@ -41,7 +41,7 @@ export function ProjectContextPage() {
       {/* Page header */}
       <div className="flex items-center justify-between border-b px-6 py-4">
         <div className="flex items-center gap-3">
-          <FolderSearch className="h-5 w-5 text-primary" />
+          <FolderSearch className="h-5 w-5 text-primary" aria-hidden="true" />
           <div>
             <h1 className="text-lg font-semibold">Project Context</h1>
             <p className="text-sm text-muted-foreground">
@@ -54,9 +54,13 @@ export function ProjectContextPage() {
           size="sm"
           onClick={handleScan}
           disabled={isScanning}
+          aria-label={isScanning ? 'Scanning projects' : `Rescan projects (${projects.length} found)`}
           className="gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${isScanning ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-4 w-4 ${isScanning ? 'animate-spin' : ''}`}
+            aria-hidden="true"
+          />
           {isScanning ? 'Scanning...' : 'Rescan'}
         </Button>
       </div>
@@ -65,11 +69,13 @@ export function ProjectContextPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel - Project list */}
         <div className="w-80 shrink-0 border-r">
+          <h2 className="sr-only">Project List</h2>
           <ProjectList />
         </div>
 
         {/* Right panel - Project detail */}
         <div className="flex-1">
+          <h2 className="sr-only">Project Details</h2>
           <ProjectDetail />
         </div>
       </div>
