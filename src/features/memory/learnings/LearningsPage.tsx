@@ -75,19 +75,31 @@ export function LearningsPage() {
       {/* Page header */}
       <div className="flex items-center justify-between border-b px-6 py-4">
         <div className="flex items-center gap-3">
-          <BookOpen className="h-5 w-5 text-primary" />
+          <BookOpen className="h-5 w-5 text-primary" aria-hidden="true" />
           <div>
             <h1 className="text-lg font-semibold">Learnings</h1>
             <p className="text-sm text-muted-foreground">Browse and search your knowledge base</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
-            <Download className="h-3.5 w-3.5" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            aria-label={`Export ${learnings.length} learnings as JSON`}
+            className="gap-1.5"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden="true" />
             Export
           </Button>
-          <Button variant="outline" size="sm" onClick={handleImport} className="gap-1.5">
-            <Upload className="h-3.5 w-3.5" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleImport}
+            aria-label="Import learnings from JSON file"
+            className="gap-1.5"
+          >
+            <Upload className="h-3.5 w-3.5" aria-hidden="true" />
             Import
           </Button>
           <Button
@@ -95,9 +107,13 @@ export function LearningsPage() {
             size="sm"
             onClick={handleLoad}
             disabled={isLoading}
+            aria-label={isLoading ? 'Loading learnings' : 'Refresh learnings'}
             className="gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+              aria-hidden="true"
+            />
             {isLoading ? 'Loading...' : 'Refresh'}
           </Button>
         </div>
@@ -107,11 +123,13 @@ export function LearningsPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel - Learnings list */}
         <div className="w-80 shrink-0 border-r">
+          <h2 className="sr-only">Learnings List</h2>
           <LearningsList />
         </div>
 
         {/* Right panel - Learning detail */}
         <div className="flex-1">
+          <h2 className="sr-only">Learning Details</h2>
           <LearningDetail />
         </div>
       </div>

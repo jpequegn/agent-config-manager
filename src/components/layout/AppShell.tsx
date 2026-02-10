@@ -35,7 +35,11 @@ export function AppShell({ children, header }: AppShellProps) {
         )}
 
         {/* Main content */}
-        <main className={cn('flex-1 overflow-auto p-6', 'transition-all duration-200')}>
+        <main
+          id="main-content"
+          className={cn('flex-1 overflow-auto p-6', 'transition-all duration-200')}
+          role="main"
+        >
           {children}
         </main>
       </div>

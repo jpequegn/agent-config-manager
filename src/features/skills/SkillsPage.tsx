@@ -47,14 +47,19 @@ export function SkillsPage() {
       {/* Page header */}
       <div className="flex items-center justify-between border-b px-6 py-4">
         <div className="flex items-center gap-3">
-          <Zap className="h-5 w-5 text-primary" />
+          <Zap className="h-5 w-5 text-primary" aria-hidden="true" />
           <div>
             <h1 className="text-lg font-semibold">Skills</h1>
             <p className="text-sm text-muted-foreground">Browse and manage agent skills</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
+          <span
+            className="text-sm text-muted-foreground"
+            role="status"
+            aria-live="polite"
+            aria-label={`${enabledCount} enabled out of ${skills.length} total skills`}
+          >
             {enabledCount} enabled / {skills.length} total
           </span>
           <Button
@@ -62,9 +67,13 @@ export function SkillsPage() {
             size="sm"
             onClick={handleLoad}
             disabled={isLoading}
+            aria-label={isLoading ? 'Loading skills' : 'Refresh skills'}
             className="gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+              aria-hidden="true"
+            />
             {isLoading ? 'Loading...' : 'Refresh'}
           </Button>
         </div>
@@ -74,11 +83,13 @@ export function SkillsPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel - Skill tree */}
         <div className="w-80 shrink-0 border-r">
+          <h2 className="sr-only">Skill List</h2>
           <SkillTree />
         </div>
 
         {/* Right panel - Skill detail */}
         <div className="flex-1">
+          <h2 className="sr-only">Skill Details</h2>
           <SkillDetail />
         </div>
       </div>

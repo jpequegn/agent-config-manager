@@ -81,23 +81,36 @@ function NavSection({
     <div className="mb-1">
       <button
         onClick={hasChildren ? onToggle : onSelect}
+        aria-expanded={hasChildren ? isExpanded : undefined}
+        aria-label={
+          isCollapsed
+            ? item.label +
+              (item.count !== undefined ? ` (${item.count})` : '') +
+              (hasChildren ? (isExpanded ? ', expanded' : ', collapsed') : '')
+            : undefined
+        }
         className={cn(
           'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-          'hover:bg-accent hover:text-accent-foreground',
+          'hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring',
           isActive && 'bg-accent text-accent-foreground',
           isCollapsed && 'justify-center px-2'
         )}
         title={isCollapsed ? item.label : undefined}
       >
-        <Icon className="h-4 w-4 shrink-0" />
+        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
         {!isCollapsed && (
           <>
             <span className="flex-1 text-left">{item.label}</span>
             {item.count !== undefined && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{item.count}</span>
+              <span
+                className="rounded-full bg-muted px-2 py-0.5 text-xs"
+                aria-label={`${item.count} items`}
+              >
+                {item.count}
+              </span>
             )}
             {hasChildren && (
-              <span className="text-muted-foreground">
+              <span className="text-muted-foreground" aria-hidden="true">
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4" />
                 ) : (
@@ -111,18 +124,32 @@ function NavSection({
 
       {/* Children (sub-items) */}
       {hasChildren && isExpanded && !isCollapsed && (
-        <div className="ml-4 mt-1 space-y-1 border-l pl-3">
+        <div
+          className="ml-4 mt-1 space-y-1 border-l pl-3"
+          role="group"
+          aria-label={`${item.label} submenu`}
+        >
           {item.children!.map((child) => (
             <button
               key={child.id}
               className={cn(
                 'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors',
-                'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                'text-muted-foreground hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring'
               )}
+              aria-label={
+                child.count !== undefined
+                  ? `${child.label} (${child.count} items)`
+                  : child.label
+              }
             >
               <span className="flex-1 text-left">{child.label}</span>
               {child.count !== undefined && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{child.count}</span>
+                <span
+                  className="rounded-full bg-muted px-2 py-0.5 text-xs"
+                  aria-hidden="true"
+                >
+                  {child.count}
+                </span>
               )}
             </button>
           ))}
@@ -148,6 +175,7 @@ export function Sidebar() {
         'flex h-full flex-col border-r bg-card transition-all duration-200',
         isCollapsed ? 'w-14' : 'w-64'
       )}
+      aria-label="Application navigation"
     >
       {/* Header */}
       <div
@@ -155,7 +183,7 @@ export function Sidebar() {
       >
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
+            <FileText className="h-5 w-5 text-primary" aria-hidden="true" />
             <span className="font-semibold">Config Manager</span>
           </div>
         )}
@@ -164,14 +192,22 @@ export function Sidebar() {
           size="icon"
           className={cn('h-8 w-8', !isCollapsed && 'ml-auto')}
           onClick={toggleSidebar}
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-expanded={!isCollapsed}
         >
-          {isCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          {isCollapsed ? (
+            <PanelLeft className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+          )}
         </Button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-2">
+      <nav
+        className="flex-1 overflow-y-auto p-2"
+        aria-label="Main navigation"
+      >
         {navItems.map((item) => (
           <NavSection
             key={item.id}
@@ -187,9 +223,17 @@ export function Sidebar() {
 
       {/* Footer - Active harness indicator */}
       {!isCollapsed && activeHarness && (
-        <div className="border-t p-3">
+        <div
+          className="border-t p-3"
+          role="status"
+          aria-live="polite"
+          aria-label={`Active harness: ${activeHarness}`}
+        >
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="h-2 w-2 rounded-full bg-green-500" />
+            <div
+              className="h-2 w-2 rounded-full bg-green-500"
+              aria-hidden="true"
+            />
             <span>Active: {activeHarness}</span>
           </div>
         </div>

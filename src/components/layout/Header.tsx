@@ -30,10 +30,14 @@ export function Header() {
     <div className="flex w-full items-center gap-4">
       {/* Search */}
       <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search
+          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          aria-hidden="true"
+        />
         <Input
           type="search"
           placeholder="Search..."
+          aria-label="Search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 pr-12"
@@ -44,6 +48,7 @@ export function Header() {
             'pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5',
             'font-mono text-[10px] font-medium text-muted-foreground sm:flex'
           )}
+          aria-hidden="true"
         >
           <span className="text-xs">⌘</span>K
         </kbd>
@@ -56,9 +61,9 @@ export function Header() {
           variant="ghost"
           size="icon"
           onClick={openCommandPalette}
-          title="Command palette (⌘K)"
+          aria-label="Open command palette (⌘K)"
         >
-          <Command className="h-4 w-4" />
+          <Command className="h-4 w-4" aria-hidden="true" />
         </Button>
 
         {/* Theme toggle */}
@@ -66,14 +71,22 @@ export function Header() {
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
-          title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}
+          aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}
         >
-          {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {resolvedTheme === 'dark' ? (
+            <Sun className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Moon className="h-4 w-4" aria-hidden="true" />
+          )}
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" title="Notifications">
-          <Bell className="h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="View notifications"
+        >
+          <Bell className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
     </div>
