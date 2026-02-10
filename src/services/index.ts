@@ -17,3 +17,6 @@ export * from './learnings'
 
 // Sessions service
 export * from './sessions'
+
+// Skills service
+export * from './skills'
