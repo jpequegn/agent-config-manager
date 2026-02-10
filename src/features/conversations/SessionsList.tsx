@@ -1,14 +1,25 @@
 /**
  * SessionsList Component
- * Filterable list of conversation sessions
+ * Filterable, sortable list of conversation sessions with debounced search
  */
 
-import { Search, MessageSquare, Loader2 } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Search, MessageSquare, Loader2, ArrowUpDown, Folder, CalendarDays, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn, formatRelativeTime } from '@/lib/utils'
 import { useSessionsStore, useSessions, useSelectedSession, useIsSessionsLoading } from '@/stores'
-import { getSession } from '@/services/sessions'
+import type { SessionSortBy } from '@/stores'
+import { getSession, getSessionListStats } from '@/services/sessions'
 import type { HarnessType, SessionSummary } from '@/types'
 
 /** Harness display colors */
@@ -31,6 +42,13 @@ const HARNESS_LABELS: { value: HarnessType; label: string }[] = [
   { value: 'aider', label: 'Aider' },
 ]
 
+/** Sort option labels */
+const SORT_LABELS: Record<SessionSortBy, string> = {
+  recent: 'Most Recent',
+  duration: 'Duration',
+  messages: 'Message Count',
+}
+
 /** Format duration from ms to readable string */
 function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000)
@@ -42,20 +60,69 @@ function formatDuration(ms: number): string {
   return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
 }
 
+/** Format date to YYYY-MM-DD for input[type=date] */
+function toDateInputValue(date: Date): string {
+  return date.toISOString().slice(0, 10)
+}
+
 export function SessionsList() {
   const sessions = useSessions()
   const selectedSession = useSelectedSession()
   const isLoading = useIsSessionsLoading()
   const searchQuery = useSessionsStore((s) => s.searchQuery)
   const filterHarness = useSessionsStore((s) => s.filterHarness)
+  const filterProject = useSessionsStore((s) => s.filterProject)
+  const filterDateStart = useSessionsStore((s) => s.filterDateStart)
+  const filterDateEnd = useSessionsStore((s) => s.filterDateEnd)
+  const sortBy = useSessionsStore((s) => s.sortBy)
+  const sortOrder = useSessionsStore((s) => s.sortOrder)
   const setSearchQuery = useSessionsStore((s) => s.setSearchQuery)
   const setFilterHarness = useSessionsStore((s) => s.setFilterHarness)
+  const setFilterProject = useSessionsStore((s) => s.setFilterProject)
+  const setFilterDateStart = useSessionsStore((s) => s.setFilterDateStart)
+  const setFilterDateEnd = useSessionsStore((s) => s.setFilterDateEnd)
+  const setSortBy = useSessionsStore((s) => s.setSortBy)
+  const setSortOrder = useSessionsStore((s) => s.setSortOrder)
   const selectSession = useSessionsStore((s) => s.selectSession)
 
-  async function handleSelect(summary: SessionSummary) {
-    const full = await getSession(summary.id)
-    selectSession(full)
-  }
+  // Local input state for debounce
+  const [localSearch, setLocalSearch] = useState(searchQuery)
+  const [projects, setProjects] = useState<string[]>([])
+
+  // Debounced search - update store 300ms after typing stops
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(localSearch)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [localSearch, setSearchQuery])
+
+  // Sync local state if store search query changes externally (e.g. clearFilters)
+  useEffect(() => {
+    setLocalSearch(searchQuery)
+  }, [searchQuery])
+
+  // Load project list on mount
+  useEffect(() => {
+    getSessionListStats().then((stats) => setProjects(stats.projects))
+  }, [])
+
+  const hasActiveFilters = useMemo(
+    () =>
+      filterHarness !== null ||
+      filterProject !== null ||
+      filterDateStart !== null ||
+      filterDateEnd !== null,
+    [filterHarness, filterProject, filterDateStart, filterDateEnd]
+  )
+
+  const handleSelect = useCallback(
+    async (summary: SessionSummary) => {
+      const full = await getSession(summary.id)
+      selectSession(full)
+    },
+    [selectSession]
+  )
 
   return (
     <div className="flex h-full flex-col">
@@ -64,33 +131,161 @@ export function SessionsList() {
         <Search className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search sessions..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
           className="pl-9"
         />
       </div>
 
-      {/* Harness filter */}
-      <div className="flex flex-wrap gap-1.5 px-3 pb-3">
-        <Button
-          variant={filterHarness === null ? 'secondary' : 'ghost'}
-          size="sm"
-          className="h-6 px-2 text-xs"
-          onClick={() => setFilterHarness(null)}
-        >
-          All
-        </Button>
-        {HARNESS_LABELS.map(({ value, label }) => (
+      {/* Filter row: harness pills + sort + project + date */}
+      <div className="space-y-2 px-3 pb-3">
+        {/* Harness filter pills */}
+        <div className="flex flex-wrap gap-1.5">
           <Button
-            key={value}
-            variant={filterHarness === value ? 'secondary' : 'ghost'}
+            variant={filterHarness === null ? 'secondary' : 'ghost'}
             size="sm"
             className="h-6 px-2 text-xs"
-            onClick={() => setFilterHarness(filterHarness === value ? null : value)}
+            onClick={() => setFilterHarness(null)}
           >
-            {label}
+            All
           </Button>
-        ))}
+          {HARNESS_LABELS.map(({ value, label }) => (
+            <Button
+              key={value}
+              variant={filterHarness === value ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={() => setFilterHarness(filterHarness === value ? null : value)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Sort + Project + Date controls */}
+        <div className="flex items-center gap-1.5">
+          {/* Sort dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs">
+                <ArrowUpDown className="h-3 w-3" />
+                {SORT_LABELS[sortBy]}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuLabel className="text-xs">Sort by</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={sortBy}
+                onValueChange={(v) => setSortBy(v as SessionSortBy)}
+              >
+                <DropdownMenuRadioItem value="recent">Most Recent</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="duration">Duration</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="messages">Message Count</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs">Order</DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={sortOrder}
+                onValueChange={(v) => setSortOrder(v as 'asc' | 'desc')}
+              >
+                <DropdownMenuRadioItem value="desc">Descending</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="asc">Ascending</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Project filter dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={filterProject ? 'secondary' : 'outline'}
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
+              >
+                <Folder className="h-3 w-3" />
+                {filterProject ?? 'Project'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel className="text-xs">Filter by project</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={filterProject ?? ''}
+                onValueChange={(v) => setFilterProject(v || null)}
+              >
+                <DropdownMenuRadioItem value="">All projects</DropdownMenuRadioItem>
+                {projects.map((project) => (
+                  <DropdownMenuRadioItem key={project} value={project}>
+                    {project}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Date range toggle */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={filterDateStart || filterDateEnd ? 'secondary' : 'outline'}
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
+              >
+                <CalendarDays className="h-3 w-3" />
+                Date
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56 p-3">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">From</label>
+                <input
+                  type="date"
+                  className="w-full rounded-md border bg-background px-2 py-1 text-xs"
+                  value={filterDateStart ? toDateInputValue(filterDateStart) : ''}
+                  onChange={(e) =>
+                    setFilterDateStart(e.target.value ? new Date(e.target.value) : null)
+                  }
+                />
+                <label className="text-xs font-medium text-muted-foreground">To</label>
+                <input
+                  type="date"
+                  className="w-full rounded-md border bg-background px-2 py-1 text-xs"
+                  value={filterDateEnd ? toDateInputValue(filterDateEnd) : ''}
+                  onChange={(e) =>
+                    setFilterDateEnd(e.target.value ? new Date(e.target.value) : null)
+                  }
+                />
+                {(filterDateStart || filterDateEnd) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-full text-xs"
+                    onClick={() => {
+                      setFilterDateStart(null)
+                      setFilterDateEnd(null)
+                    }}
+                  >
+                    Clear dates
+                  </Button>
+                )}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Clear all filters */}
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs text-muted-foreground"
+              onClick={() => useSessionsStore.getState().clearFilters()}
+            >
+              <X className="h-3 w-3" />
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Sessions list */}

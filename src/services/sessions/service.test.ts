@@ -40,22 +40,28 @@ describe('SessionsService', () => {
       }
     })
 
-    it('should filter by search text', async () => {
+    it('should filter by search text in title and tags', async () => {
       const results = await listSessions({ searchText: 'zustand' })
       expect(results.length).toBeGreaterThan(0)
+    })
+
+    it('should filter by search text in message content', async () => {
+      // "localStorage.setItem" is in message content of sess-002
+      const results = await listSessions({ searchText: 'localStorage' })
+      expect(results.length).toBeGreaterThan(0)
+      expect(results.some((s) => s.id === 'sess-002')).toBe(true)
     })
 
     it('should filter by project', async () => {
       const results = await listSessions({ project: 'agent-config-manager' })
       expect(results.length).toBeGreaterThan(0)
       for (const s of results) {
-        expect(s.project?.toLowerCase()).toContain('agent-config-manager')
+        expect(s.project?.toLowerCase()).toBe('agent-config-manager')
       }
     })
 
     it('should filter by active only', async () => {
       const active = await listSessions({ activeOnly: true })
-      // At least one active session in mock data
       expect(active.length).toBeGreaterThan(0)
     })
 
@@ -68,6 +74,49 @@ describe('SessionsService', () => {
       const sessions = await listSessions()
       const withPreview = sessions.filter((s) => s.lastMessagePreview)
       expect(withPreview.length).toBeGreaterThan(0)
+    })
+
+    it('should sort by most recent descending by default', async () => {
+      const sessions = await listSessions()
+      for (let i = 1; i < sessions.length; i++) {
+        expect(sessions[i - 1].startedAt.getTime()).toBeGreaterThanOrEqual(
+          sessions[i].startedAt.getTime()
+        )
+      }
+    })
+
+    it('should sort by duration ascending', async () => {
+      const sessions = await listSessions(undefined, {
+        sortBy: 'duration',
+        sortOrder: 'asc',
+      })
+      for (let i = 1; i < sessions.length; i++) {
+        expect(sessions[i].duration).toBeGreaterThanOrEqual(sessions[i - 1].duration)
+      }
+    })
+
+    it('should sort by message count descending', async () => {
+      const sessions = await listSessions(undefined, {
+        sortBy: 'messages',
+        sortOrder: 'desc',
+      })
+      for (let i = 1; i < sessions.length; i++) {
+        expect(sessions[i - 1].messageCount).toBeGreaterThanOrEqual(sessions[i].messageCount)
+      }
+    })
+
+    it('should combine filters and sort', async () => {
+      const sessions = await listSessions(
+        { harness: 'claude-code' },
+        { sortBy: 'messages', sortOrder: 'desc' }
+      )
+      expect(sessions.length).toBeGreaterThan(0)
+      for (const s of sessions) {
+        expect(s.harness).toBe('claude-code')
+      }
+      for (let i = 1; i < sessions.length; i++) {
+        expect(sessions[i - 1].messageCount).toBeGreaterThanOrEqual(sessions[i].messageCount)
+      }
     })
   })
 
@@ -105,6 +154,16 @@ describe('SessionsService', () => {
       const stats = await getSessionListStats()
       expect(stats.activeSessions).toBeGreaterThanOrEqual(0)
       expect(stats.activeSessions).toBeLessThanOrEqual(stats.totalSessions)
+    })
+
+    it('should return unique project list', async () => {
+      const stats = await getSessionListStats()
+      expect(stats.projects.length).toBeGreaterThan(0)
+      // Should be sorted
+      const sorted = [...stats.projects].sort()
+      expect(stats.projects).toEqual(sorted)
+      // Should be unique
+      expect(new Set(stats.projects).size).toBe(stats.projects.length)
     })
   })
 })

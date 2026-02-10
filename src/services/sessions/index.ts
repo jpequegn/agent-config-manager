@@ -4,4 +4,4 @@
  */
 
 export { listSessions, getSession, getSessionListStats } from './service'
-export type { SessionListStats } from './service'
+export type { SessionListStats, SessionSortField, SessionSortOptions } from './service'

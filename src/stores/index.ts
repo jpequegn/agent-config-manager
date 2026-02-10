@@ -60,6 +60,7 @@ export {
 } from './learnings-store'
 
 // Sessions store
+export type { SessionSortBy } from './sessions-store'
 export {
   useSessionsStore,
   useSessions,

@@ -55,6 +55,10 @@ describe('SessionsStore', () => {
     store.setSearchQuery('')
     store.setFilterHarness(null)
     store.setFilterProject(null)
+    store.setFilterDateStart(null)
+    store.setFilterDateEnd(null)
+    store.setSortBy('recent')
+    store.setSortOrder('desc')
   })
 
   it('should start with defaults after reset', () => {
@@ -65,6 +69,10 @@ describe('SessionsStore', () => {
     expect(state.searchQuery).toBe('')
     expect(state.filterHarness).toBeNull()
     expect(state.filterProject).toBeNull()
+    expect(state.filterDateStart).toBeNull()
+    expect(state.filterDateEnd).toBeNull()
+    expect(state.sortBy).toBe('recent')
+    expect(state.sortOrder).toBe('desc')
   })
 
   it('should set sessions list', () => {
@@ -103,14 +111,34 @@ describe('SessionsStore', () => {
     expect(useSessionsStore.getState().filterProject).toBe('my-project')
   })
 
-  it('should clear all filters', () => {
+  it('should set date range filters', () => {
+    const start = new Date('2025-01-01')
+    const end = new Date('2025-12-31')
+    useSessionsStore.getState().setFilterDateStart(start)
+    useSessionsStore.getState().setFilterDateEnd(end)
+    expect(useSessionsStore.getState().filterDateStart).toEqual(start)
+    expect(useSessionsStore.getState().filterDateEnd).toEqual(end)
+  })
+
+  it('should set sort options', () => {
+    useSessionsStore.getState().setSortBy('duration')
+    useSessionsStore.getState().setSortOrder('asc')
+    expect(useSessionsStore.getState().sortBy).toBe('duration')
+    expect(useSessionsStore.getState().sortOrder).toBe('asc')
+  })
+
+  it('should clear all filters including dates', () => {
     useSessionsStore.getState().setSearchQuery('test')
     useSessionsStore.getState().setFilterHarness('cursor')
     useSessionsStore.getState().setFilterProject('my-project')
+    useSessionsStore.getState().setFilterDateStart(new Date())
+    useSessionsStore.getState().setFilterDateEnd(new Date())
     useSessionsStore.getState().clearFilters()
     const state = useSessionsStore.getState()
     expect(state.searchQuery).toBe('')
     expect(state.filterHarness).toBeNull()
     expect(state.filterProject).toBeNull()
+    expect(state.filterDateStart).toBeNull()
+    expect(state.filterDateEnd).toBeNull()
   })
 })
