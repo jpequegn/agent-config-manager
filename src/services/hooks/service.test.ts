@@ -16,6 +16,10 @@ import {
   getMonacoLanguage,
   validateHookConfig,
   saveHook,
+  getHookLogs,
+  clearHookLogs,
+  getHookExecutionStats,
+  runHookTest,
 } from './service'
 
 describe('Hooks Service', () => {
@@ -250,5 +254,89 @@ describe('saveHook', () => {
     )
     expect(hook.id).not.toBe('nonexistent-id')
     expect(hook.name).toBe('Fallback hook')
+  })
+})
+
+describe('getHookLogs', () => {
+  it('should return logs for a hook', async () => {
+    const logs = await getHookLogs('hook-1')
+    expect(logs.length).toBeGreaterThan(0)
+    expect(logs[0]).toHaveProperty('id')
+    expect(logs[0]).toHaveProperty('hookId')
+    expect(logs[0]).toHaveProperty('result')
+    expect(logs[0]).toHaveProperty('duration')
+  })
+
+  it('should filter logs by result', async () => {
+    const logs = await getHookLogs('hook-1', 'allow')
+    for (const log of logs) {
+      expect(log.result).toBe('allow')
+    }
+  })
+
+  it('should return sorted by timestamp descending', async () => {
+    const logs = await getHookLogs('hook-1')
+    for (let i = 1; i < logs.length; i++) {
+      expect(logs[i - 1].timestamp.getTime()).toBeGreaterThanOrEqual(logs[i].timestamp.getTime())
+    }
+  })
+})
+
+describe('clearHookLogs', () => {
+  it('should clear logs for a hook', async () => {
+    // Ensure logs exist
+    await getHookLogs('hook-2')
+    const result = await clearHookLogs('hook-2')
+    expect(result).toBe(true)
+    const logs = await getHookLogs('hook-2')
+    expect(logs).toHaveLength(0)
+  })
+})
+
+describe('getHookExecutionStats', () => {
+  it('should return execution stats', async () => {
+    const stats = await getHookExecutionStats('hook-1')
+    expect(stats.totalRuns).toBeGreaterThan(0)
+    expect(stats.allowCount + stats.blockCount + stats.errorCount + stats.skipCount).toBe(
+      stats.totalRuns
+    )
+    expect(stats.avgDuration).toBeGreaterThanOrEqual(0)
+    expect(stats.maxDuration).toBeGreaterThanOrEqual(0)
+    expect(stats.recentResults).toHaveLength(7)
+  })
+
+  it('should have daily breakdowns in recent results', async () => {
+    const stats = await getHookExecutionStats('hook-1')
+    for (const day of stats.recentResults) {
+      expect(day).toHaveProperty('date')
+      expect(day).toHaveProperty('allow')
+      expect(day).toHaveProperty('block')
+      expect(day).toHaveProperty('error')
+    }
+  })
+})
+
+describe('runHookTest', () => {
+  it('should return a test result', async () => {
+    const result = await runHookTest('hook-1', '{"tool":"Edit"}')
+    expect(result).toHaveProperty('result')
+    expect(result).toHaveProperty('duration')
+    expect(result).toHaveProperty('output')
+    expect(result).toHaveProperty('exitCode')
+    expect(['allow', 'block', 'error']).toContain(result.result)
+  })
+
+  it('should return error for unknown hook', async () => {
+    const result = await runHookTest('nonexistent', '{}')
+    expect(result.result).toBe('error')
+    expect(result.output).toContain('Hook not found')
+  })
+
+  it('should add log entry after test', async () => {
+    await clearHookLogs('hook-3')
+    await runHookTest('hook-3', '{"tool":"Read"}')
+    const logs = await getHookLogs('hook-3')
+    expect(logs.length).toBeGreaterThan(0)
+    expect(logs[0].input).toBe('{"tool":"Read"}')
   })
 })

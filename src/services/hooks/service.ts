@@ -3,7 +3,15 @@
  * Provides mock data for hook management: listing, toggling, reordering, bulk ops
  */
 
-import type { HookTrigger, HookSummary, Hook, HookStatus, CreateHookOptions } from '@/types'
+import type {
+  HookTrigger,
+  HookSummary,
+  Hook,
+  HookStatus,
+  HookResult,
+  HookLogEntry,
+  CreateHookOptions,
+} from '@/types'
 import { generateId } from '@/lib/utils'
 
 /** Hook group by trigger */
@@ -473,4 +481,188 @@ export async function saveHook(options: CreateHookOptions, existingId?: string):
   }
   MOCK_HOOKS.push(newHook)
   return newHook
+}
+
+// --- Hook Logs & Testing ---
+
+const TOOL_NAMES = ['Edit', 'Write', 'Read', 'Bash', 'Glob', 'Grep', 'WebFetch']
+
+function randomResult(): HookResult {
+  const r = Math.random()
+  if (r < 0.7) return 'allow'
+  if (r < 0.85) return 'block'
+  if (r < 0.95) return 'error'
+  return 'skip'
+}
+
+function generateMockLogs(hookId: string, count: number): HookLogEntry[] {
+  const hook = MOCK_HOOKS.find((h) => h.id === hookId)
+  const entries: HookLogEntry[] = []
+  for (let i = 0; i < count; i++) {
+    const result = randomResult()
+    const timestamp = new Date(Date.now() - Math.random() * 86400000 * 7)
+    const duration = Math.floor(Math.random() * 2000) + 5
+    entries.push({
+      id: generateId('log'),
+      hookId,
+      timestamp,
+      duration,
+      result,
+      input: JSON.stringify({
+        tool: TOOL_NAMES[Math.floor(Math.random() * TOOL_NAMES.length)],
+        args: { file_path: '/src/example.ts' },
+      }),
+      output:
+        result === 'allow' ? 'OK' : result === 'block' ? 'Blocked: sensitive file' : undefined,
+      error: result === 'error' ? 'Script timed out after 5000ms' : undefined,
+      triggeringTool:
+        hook?.config.trigger === 'PreToolUse' || hook?.config.trigger === 'PostToolUse'
+          ? TOOL_NAMES[Math.floor(Math.random() * TOOL_NAMES.length)]
+          : undefined,
+    })
+  }
+  return entries.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+}
+
+const logsCache = new Map<string, HookLogEntry[]>()
+
+/**
+ * Get execution logs for a hook.
+ */
+export async function getHookLogs(
+  hookId: string,
+  filter?: HookResult | null
+): Promise<HookLogEntry[]> {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  if (!logsCache.has(hookId)) {
+    logsCache.set(hookId, generateMockLogs(hookId, 50))
+  }
+  const logs = logsCache.get(hookId)!
+  return filter ? logs.filter((l) => l.result === filter) : logs
+}
+
+/**
+ * Clear execution logs for a hook.
+ */
+export async function clearHookLogs(hookId: string): Promise<boolean> {
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  logsCache.set(hookId, [])
+  return true
+}
+
+/** Execution stats for a hook */
+export interface HookExecutionStats {
+  totalRuns: number
+  allowCount: number
+  blockCount: number
+  errorCount: number
+  skipCount: number
+  avgDuration: number
+  maxDuration: number
+  recentResults: { date: string; allow: number; block: number; error: number }[]
+}
+
+/**
+ * Get execution statistics for a hook.
+ */
+export async function getHookExecutionStats(hookId: string): Promise<HookExecutionStats> {
+  await new Promise((resolve) => setTimeout(resolve, 150))
+  const logs = logsCache.has(hookId) ? logsCache.get(hookId)! : generateMockLogs(hookId, 50)
+  if (!logsCache.has(hookId)) logsCache.set(hookId, logs)
+
+  const totalRuns = logs.length
+  const allowCount = logs.filter((l) => l.result === 'allow').length
+  const blockCount = logs.filter((l) => l.result === 'block').length
+  const errorCount = logs.filter((l) => l.result === 'error').length
+  const skipCount = logs.filter((l) => l.result === 'skip').length
+  const durations = logs.map((l) => l.duration)
+  const avgDuration =
+    totalRuns > 0 ? Math.round(durations.reduce((a, b) => a + b, 0) / totalRuns) : 0
+  const maxDuration = totalRuns > 0 ? Math.max(...durations) : 0
+
+  // Group by day for recent results (last 7 days)
+  const dayMap = new Map<string, { allow: number; block: number; error: number }>()
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000)
+    const key = d.toISOString().split('T')[0]
+    dayMap.set(key, { allow: 0, block: 0, error: 0 })
+  }
+  for (const log of logs) {
+    const key = log.timestamp.toISOString().split('T')[0]
+    const entry = dayMap.get(key)
+    if (entry) {
+      if (log.result === 'allow') entry.allow++
+      else if (log.result === 'block') entry.block++
+      else if (log.result === 'error') entry.error++
+    }
+  }
+  const recentResults = [...dayMap.entries()].map(([date, counts]) => ({ date, ...counts }))
+
+  return {
+    totalRuns,
+    allowCount,
+    blockCount,
+    errorCount,
+    skipCount,
+    avgDuration,
+    maxDuration,
+    recentResults,
+  }
+}
+
+/** Test run result */
+export interface HookTestResult {
+  result: HookResult
+  duration: number
+  output: string
+  exitCode: number
+}
+
+/**
+ * Run a test execution of a hook with sample input.
+ */
+export async function runHookTest(hookId: string, sampleInput: string): Promise<HookTestResult> {
+  await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 1000))
+  const hook = MOCK_HOOKS.find((h) => h.id === hookId)
+  if (!hook) {
+    return { result: 'error', duration: 0, output: 'Hook not found', exitCode: 1 }
+  }
+
+  const duration = Math.floor(Math.random() * 500) + 10
+  const r = Math.random()
+  let result: HookResult
+  let exitCode: number
+  let output: string
+
+  if (r < 0.6) {
+    result = 'allow'
+    exitCode = 0
+    output = `Hook "${hook.name}" executed successfully.\nInput processed: ${sampleInput.slice(0, 100)}\nResult: ALLOW`
+  } else if (r < 0.85) {
+    result = 'block'
+    exitCode = 2
+    output = `Hook "${hook.name}" blocked the operation.\nReason: Input matched blocked pattern.\nResult: BLOCK`
+  } else {
+    result = 'error'
+    exitCode = 1
+    output = `Hook "${hook.name}" failed.\nError: Unexpected exit code\nResult: ERROR`
+  }
+
+  // Add to logs cache
+  const logEntry: HookLogEntry = {
+    id: generateId('log'),
+    hookId,
+    timestamp: new Date(),
+    duration,
+    result,
+    input: sampleInput,
+    output,
+    error: result === 'error' ? output : undefined,
+  }
+  if (!logsCache.has(hookId)) {
+    logsCache.set(hookId, [])
+  }
+  logsCache.get(hookId)!.unshift(logEntry)
+
+  return { result, duration, output, exitCode }
 }

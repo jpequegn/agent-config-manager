@@ -3,7 +3,13 @@
  * Exports hook management operations
  */
 
-export type { HookGroup, HookBulkResult, HookValidationResult } from './service'
+export type {
+  HookGroup,
+  HookBulkResult,
+  HookValidationResult,
+  HookExecutionStats,
+  HookTestResult,
+} from './service'
 export {
   listHooks,
   listHookSummaries,
@@ -17,4 +23,8 @@ export {
   getMonacoLanguage,
   validateHookConfig,
   saveHook,
+  getHookLogs,
+  clearHookLogs,
+  getHookExecutionStats,
+  runHookTest,
 } from './service'
