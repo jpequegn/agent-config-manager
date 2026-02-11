@@ -88,3 +88,13 @@ export {
   useIsToolsLoading,
   useActiveToolTab,
 } from './tools-store'
+
+// Settings store
+export type { SettingsViewMode } from './settings-store'
+export {
+  useSettingsStore,
+  useSettingsList,
+  useSelectedSettingKey,
+  useIsSettingsLoading,
+  useSettingsViewMode,
+} from './settings-store'

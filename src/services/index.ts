@@ -23,3 +23,6 @@ export * from './skills'
 
 // Tools service
 export * from './tools'
+
+// Settings service
+export * from './settings'
