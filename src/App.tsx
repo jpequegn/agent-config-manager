@@ -8,6 +8,7 @@ import {
   Settings2,
   BarChart3,
   Database,
+  HardDrive,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
@@ -16,6 +17,7 @@ import {
   LearningsPage,
   MemoryDashboard,
   SessionMemoryPage,
+  ExternalContextPage,
 } from '@/features/memory'
 import { ConversationsPage } from '@/features/conversations'
 import { SkillsPage } from '@/features/skills'
@@ -25,6 +27,7 @@ import { cn } from '@/lib/utils'
 
 type AppTab =
   | 'memory'
+  | 'external-context'
   | 'project-context'
   | 'learnings'
   | 'session-memory'
@@ -35,6 +38,7 @@ type AppTab =
 
 const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'memory', label: 'Memory', icon: BarChart3 },
+  { id: 'external-context', label: 'External', icon: HardDrive },
   { id: 'project-context', label: 'Project Context', icon: FolderSearch },
   { id: 'learnings', label: 'Learnings', icon: BookOpen },
   { id: 'session-memory', label: 'Session Memory', icon: Database },
@@ -117,6 +121,14 @@ function App() {
         hidden={activeTab !== 'memory'}
       >
         {activeTab === 'memory' && <MemoryDashboard />}
+      </div>
+      <div
+        id="panel-external-context"
+        role="tabpanel"
+        aria-labelledby="external-context-tab"
+        hidden={activeTab !== 'external-context'}
+      >
+        {activeTab === 'external-context' && <ExternalContextPage />}
       </div>
       <div
         id="panel-project-context"

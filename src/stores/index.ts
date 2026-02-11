@@ -117,3 +117,12 @@ export {
   usePruneRules,
   useIsBulkOperating,
 } from './session-memory-store'
+
+// External context store
+export {
+  useExternalContextStore,
+  useExternalDrives,
+  useSelectedDriveId,
+  useIsDetectingDrives,
+  useSyncConfigs,
+} from './external-context-store'
