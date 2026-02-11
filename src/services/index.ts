@@ -35,3 +35,6 @@ export * from './session-memory'
 
 // External context service
 export * from './external-context'
+
+// Hooks service
+export * from './hooks'
