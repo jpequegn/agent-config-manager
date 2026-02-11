@@ -135,3 +135,14 @@ export {
   useIsHooksLoading,
   useHooksFilterTrigger,
 } from './hooks-store'
+
+// Hook logs store
+export {
+  useHookLogsStore,
+  useHookLogs,
+  useHookLogsFilter,
+  useIsHookLogLoading,
+  useHookExecutionStats,
+  useLastTestResult,
+  useIsHookTesting,
+} from './hook-logs-store'

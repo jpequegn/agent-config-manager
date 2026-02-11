@@ -10,6 +10,7 @@ import {
   Database,
   HardDrive,
   Webhook,
+  Activity,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,7 @@ import { ConversationsPage } from '@/features/conversations'
 import { SkillsPage } from '@/features/skills'
 import { ToolsPage } from '@/features/tools'
 import { SettingsPage } from '@/features/settings'
-import { HooksPage } from '@/features/hooks'
+import { HooksPage, HookTestingPage } from '@/features/hooks'
 import { cn } from '@/lib/utils'
 
 type AppTab =
@@ -35,6 +36,7 @@ type AppTab =
   | 'session-memory'
   | 'sessions'
   | 'hooks'
+  | 'hook-testing'
   | 'skills'
   | 'tools'
   | 'settings'
@@ -47,6 +49,7 @@ const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?:
   { id: 'session-memory', label: 'Session Memory', icon: Database },
   { id: 'sessions', label: 'Sessions', icon: History },
   { id: 'hooks', label: 'Hooks', icon: Webhook },
+  { id: 'hook-testing', label: 'Hook Logs', icon: Activity },
   { id: 'skills', label: 'Skills', icon: Zap },
   { id: 'tools', label: 'Tools', icon: Wrench },
   { id: 'settings', label: 'Settings', icon: Settings2 },
@@ -173,6 +176,14 @@ function App() {
         hidden={activeTab !== 'hooks'}
       >
         {activeTab === 'hooks' && <HooksPage />}
+      </div>
+      <div
+        id="panel-hook-testing"
+        role="tabpanel"
+        aria-labelledby="hook-testing-tab"
+        hidden={activeTab !== 'hook-testing'}
+      >
+        {activeTab === 'hook-testing' && <HookTestingPage />}
       </div>
       <div
         id="panel-skills"
