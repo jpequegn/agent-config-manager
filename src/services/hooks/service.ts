@@ -3,7 +3,8 @@
  * Provides mock data for hook management: listing, toggling, reordering, bulk ops
  */
 
-import type { HookTrigger, HookSummary, Hook, HookStatus } from '@/types'
+import type { HookTrigger, HookSummary, Hook, HookStatus, CreateHookOptions } from '@/types'
+import { generateId } from '@/lib/utils'
 
 /** Hook group by trigger */
 export interface HookGroup {
@@ -375,4 +376,101 @@ export async function bulkDisableHooks(ids: string[]): Promise<HookBulkResult> {
     }
   }
   return { success: true, affectedCount: count, message: `Disabled ${count} hooks` }
+}
+
+/** Language to Monaco language ID mapping */
+const LANGUAGE_MAP: Record<string, string> = {
+  bash: 'shell',
+  python: 'python',
+  node: 'javascript',
+  unknown: 'plaintext',
+}
+
+/**
+ * Detect script language from file extension or shebang.
+ */
+export function detectScriptLanguage(
+  filename: string,
+  content?: string
+): 'bash' | 'python' | 'node' | 'unknown' {
+  const ext = filename.split('.').pop()?.toLowerCase()
+  if (ext === 'sh' || ext === 'bash' || ext === 'zsh') return 'bash'
+  if (ext === 'py') return 'python'
+  if (ext === 'js' || ext === 'ts' || ext === 'mjs') return 'node'
+
+  if (content) {
+    const firstLine = content.split('\n')[0]
+    if (firstLine.includes('bash') || firstLine.includes('sh')) return 'bash'
+    if (firstLine.includes('python')) return 'python'
+    if (firstLine.includes('node')) return 'node'
+  }
+
+  return 'unknown'
+}
+
+/**
+ * Get Monaco editor language ID for a script language.
+ */
+export function getMonacoLanguage(lang: string): string {
+  return LANGUAGE_MAP[lang] ?? 'plaintext'
+}
+
+/** Validation result for hook config */
+export interface HookValidationResult {
+  valid: boolean
+  errors: string[]
+}
+
+/**
+ * Validate hook configuration.
+ */
+export function validateHookConfig(options: Partial<CreateHookOptions>): HookValidationResult {
+  const errors: string[] = []
+  if (!options.name?.trim()) errors.push('Name is required')
+  if (!options.config?.trigger) errors.push('Trigger type is required')
+  if (!options.scriptContent?.trim()) errors.push('Script content is required')
+  if (!options.harness) errors.push('Harness is required')
+  if (options.config?.timeout != null && options.config.timeout < 0) {
+    errors.push('Timeout must be positive')
+  }
+  return { valid: errors.length === 0, errors }
+}
+
+/**
+ * Save a hook (create or update).
+ */
+export async function saveHook(options: CreateHookOptions, existingId?: string): Promise<Hook> {
+  await new Promise((resolve) => setTimeout(resolve, 300))
+
+  const now = new Date()
+  if (existingId) {
+    const existing = MOCK_HOOKS.find((h) => h.id === existingId)
+    if (existing) {
+      existing.name = options.name
+      existing.description = options.description
+      existing.config = options.config
+      existing.scriptContent = options.scriptContent
+      existing.scriptLanguage = options.scriptLanguage
+      existing.harness = options.harness
+      existing.updatedAt = now
+      return existing
+    }
+  }
+
+  const newHook: Hook = {
+    id: generateId('hook'),
+    name: options.name,
+    harness: options.harness,
+    config: options.config,
+    scriptPath: `~/.claude/hooks/${options.name.toLowerCase().replace(/\s+/g, '-')}.${options.scriptLanguage === 'python' ? 'py' : options.scriptLanguage === 'node' ? 'js' : 'sh'}`,
+    scriptContent: options.scriptContent,
+    scriptLanguage: options.scriptLanguage,
+    status: 'enabled',
+    stats: { runCount: 0, allowCount: 0, blockCount: 0, errorCount: 0 },
+    description: options.description,
+    createdAt: now,
+    updatedAt: now,
+  }
+  MOCK_HOOKS.push(newHook)
+  return newHook
 }

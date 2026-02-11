@@ -2,11 +2,18 @@
  * HooksPage Component Tests
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@/test/utils'
 import { userEvent } from '@testing-library/user-event'
 import { HooksPage } from './HooksPage'
 import { useHooksStore } from '@/stores/hooks-store'
+
+// Mock Monaco Editor since it requires web workers
+vi.mock('@monaco-editor/react', () => ({
+  default: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <textarea data-testid="mock-monaco" value={value} onChange={(e) => onChange(e.target.value)} />
+  ),
+}))
 
 describe('HooksPage', () => {
   beforeEach(() => {
@@ -92,5 +99,45 @@ describe('HooksPage', () => {
   it('should show select all checkbox', () => {
     render(<HooksPage />)
     expect(screen.getByLabelText('Select all hooks')).toBeInTheDocument()
+  })
+
+  it('should show New Hook button', () => {
+    render(<HooksPage />)
+    expect(screen.getByRole('button', { name: /create new hook/i })).toBeInTheDocument()
+  })
+
+  it('should open editor when New Hook is clicked', async () => {
+    const user = userEvent.setup()
+    render(<HooksPage />)
+
+    await user.click(screen.getByRole('button', { name: /create new hook/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Hook', { selector: 'h2' })).toBeInTheDocument()
+    })
+  })
+
+  it('should show edit buttons on hook cards', async () => {
+    render(<HooksPage />)
+    await waitFor(() => {
+      const editButtons = screen.getAllByLabelText(/^Edit /)
+      expect(editButtons.length).toBeGreaterThan(0)
+    })
+  })
+
+  it('should open editor when edit button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<HooksPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Sensitive file guard')).toBeInTheDocument()
+    })
+
+    const editButton = screen.getByLabelText('Edit Sensitive file guard')
+    await user.click(editButton)
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit Hook')).toBeInTheDocument()
+    })
   })
 })

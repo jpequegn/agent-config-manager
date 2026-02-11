@@ -3,14 +3,15 @@
  * Main hooks list and management interface
  */
 
-import { useEffect, useCallback } from 'react'
-import { RefreshCw, Webhook } from 'lucide-react'
+import { useEffect, useCallback, useState } from 'react'
+import { RefreshCw, Webhook, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useHooksStore } from '@/stores/hooks-store'
 import { getHooksGroupedByTrigger, toggleHookStatus } from '@/services/hooks'
 import { HookGroupSection } from './HookGroupSection'
 import { BulkHookActions } from './BulkHookActions'
+import { HookEditor } from './HookEditor'
 import type { HookTrigger } from '@/types'
 
 const TRIGGER_FILTERS: { value: HookTrigger | null; label: string }[] = [
@@ -26,6 +27,8 @@ const TRIGGER_FILTERS: { value: HookTrigger | null; label: string }[] = [
 ]
 
 export function HooksPage() {
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [editingHookId, setEditingHookId] = useState<string | null>(null)
   const hookGroups = useHooksStore((s) => s.hookGroups)
   const isLoading = useHooksStore((s) => s.isLoading)
   const filterTrigger = useHooksStore((s) => s.filterTrigger)
@@ -84,6 +87,17 @@ export function HooksPage() {
           {totalHooks > 0 && (
             <span className="text-sm text-muted-foreground">{totalHooks} hooks</span>
           )}
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditingHookId(null)
+              setEditorOpen(true)
+            }}
+            aria-label="Create new hook"
+          >
+            <Plus className="mr-2 h-3.5 w-3.5" />
+            New Hook
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -166,6 +180,10 @@ export function HooksPage() {
             selectedIds={selectedIds}
             onToggleSelect={toggleSelected}
             onToggleStatus={handleToggleStatus}
+            onEdit={(id) => {
+              setEditingHookId(id)
+              setEditorOpen(true)
+            }}
           />
         ))}
 
@@ -177,6 +195,8 @@ export function HooksPage() {
           </div>
         )}
       </div>
+      {/* Hook editor dialog */}
+      <HookEditor hookId={editingHookId} open={editorOpen} onOpenChange={setEditorOpen} />
     </div>
   )
 }

@@ -34,6 +34,7 @@ interface Props {
   selectedIds: Set<string>
   onToggleSelect: (id: string) => void
   onToggleStatus: (id: string) => void
+  onEdit: (id: string) => void
 }
 
 export function HookGroupSection({
@@ -42,6 +43,7 @@ export function HookGroupSection({
   selectedIds,
   onToggleSelect,
   onToggleStatus,
+  onEdit,
 }: Props) {
   const enabledCount = hooks.filter((h) => h.status === 'enabled').length
 
@@ -64,6 +66,7 @@ export function HookGroupSection({
             isSelected={selectedIds.has(hook.id)}
             onToggleSelect={() => onToggleSelect(hook.id)}
             onToggleStatus={() => onToggleStatus(hook.id)}
+            onEdit={() => onEdit(hook.id)}
           />
         ))}
       </div>
