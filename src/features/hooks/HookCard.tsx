@@ -3,7 +3,7 @@
  * Displays a single hook with name, harness badge, trigger, toggle, and stats
  */
 
-import { GripVertical, AlertCircle } from 'lucide-react'
+import { GripVertical, AlertCircle, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { harnessConfigs } from '@/components/harness/harness-config'
 import type { HookSummary } from '@/types'
@@ -13,9 +13,10 @@ interface Props {
   isSelected: boolean
   onToggleSelect: () => void
   onToggleStatus: () => void
+  onEdit: () => void
 }
 
-export function HookCard({ hook, isSelected, onToggleSelect, onToggleStatus }: Props) {
+export function HookCard({ hook, isSelected, onToggleSelect, onToggleStatus, onEdit }: Props) {
   const harnessConfig = harnessConfigs[hook.harness]
   const isEnabled = hook.status === 'enabled'
   const isError = hook.status === 'error'
@@ -67,8 +68,15 @@ export function HookCard({ hook, isSelected, onToggleSelect, onToggleStatus }: P
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Edit + Stats */}
       <div className="flex shrink-0 items-center gap-4 text-xs text-muted-foreground">
+        <button
+          onClick={onEdit}
+          className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          aria-label={`Edit ${hook.name}`}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
         <div className="text-right">
           <div>{hook.runCount} runs</div>
           {hook.blockCount > 0 && <div className="text-yellow-500">{hook.blockCount} blocked</div>}

@@ -3,7 +3,7 @@
  * Exports hook management operations
  */
 
-export type { HookGroup, HookBulkResult } from './service'
+export type { HookGroup, HookBulkResult, HookValidationResult } from './service'
 export {
   listHooks,
   listHookSummaries,
@@ -13,4 +13,8 @@ export {
   reorderHooks,
   bulkEnableHooks,
   bulkDisableHooks,
+  detectScriptLanguage,
+  getMonacoLanguage,
+  validateHookConfig,
+  saveHook,
 } from './service'
