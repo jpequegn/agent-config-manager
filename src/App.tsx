@@ -1,8 +1,22 @@
 import { useState, useRef } from 'react'
-import { FolderSearch, BookOpen, History, Zap, Wrench, Settings2, BarChart3 } from 'lucide-react'
+import {
+  FolderSearch,
+  BookOpen,
+  History,
+  Zap,
+  Wrench,
+  Settings2,
+  BarChart3,
+  Database,
+} from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
-import { ProjectContextPage, LearningsPage, MemoryDashboard } from '@/features/memory'
+import {
+  ProjectContextPage,
+  LearningsPage,
+  MemoryDashboard,
+  SessionMemoryPage,
+} from '@/features/memory'
 import { ConversationsPage } from '@/features/conversations'
 import { SkillsPage } from '@/features/skills'
 import { ToolsPage } from '@/features/tools'
@@ -13,6 +27,7 @@ type AppTab =
   | 'memory'
   | 'project-context'
   | 'learnings'
+  | 'session-memory'
   | 'sessions'
   | 'skills'
   | 'tools'
@@ -22,6 +37,7 @@ const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?:
   { id: 'memory', label: 'Memory', icon: BarChart3 },
   { id: 'project-context', label: 'Project Context', icon: FolderSearch },
   { id: 'learnings', label: 'Learnings', icon: BookOpen },
+  { id: 'session-memory', label: 'Session Memory', icon: Database },
   { id: 'sessions', label: 'Sessions', icon: History },
   { id: 'skills', label: 'Skills', icon: Zap },
   { id: 'tools', label: 'Tools', icon: Wrench },
@@ -117,6 +133,14 @@ function App() {
         hidden={activeTab !== 'learnings'}
       >
         {activeTab === 'learnings' && <LearningsPage />}
+      </div>
+      <div
+        id="panel-session-memory"
+        role="tabpanel"
+        aria-labelledby="session-memory-tab"
+        hidden={activeTab !== 'session-memory'}
+      >
+        {activeTab === 'session-memory' && <SessionMemoryPage />}
       </div>
       <div
         id="panel-sessions"

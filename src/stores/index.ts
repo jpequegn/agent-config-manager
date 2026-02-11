@@ -107,3 +107,13 @@ export {
   useIsMemoryLoading,
   useBreakdownView,
 } from './memory-store'
+
+// Session memory store
+export type { SessionMemoryPanel } from './session-memory-store'
+export {
+  useSessionMemoryStore,
+  useSelectedSessionIds,
+  useSessionMemoryPanel,
+  usePruneRules,
+  useIsBulkOperating,
+} from './session-memory-store'
