@@ -29,3 +29,6 @@ export * from './settings'
 
 // Memory service
 export * from './memory'
+
+// Session memory service
+export * from './session-memory'
