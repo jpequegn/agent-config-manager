@@ -126,3 +126,12 @@ export {
   useIsDetectingDrives,
   useSyncConfigs,
 } from './external-context-store'
+
+// Hooks store
+export {
+  useHooksStore,
+  useHookGroups,
+  useSelectedHookIds,
+  useIsHooksLoading,
+  useHooksFilterTrigger,
+} from './hooks-store'

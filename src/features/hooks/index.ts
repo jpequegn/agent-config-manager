@@ -1,4 +1,4 @@
 // Hooks feature
 // Hook management, editor, templates, and testing
 
-export {}
+export { HooksPage } from './HooksPage'

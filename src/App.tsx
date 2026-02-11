@@ -9,6 +9,7 @@ import {
   BarChart3,
   Database,
   HardDrive,
+  Webhook,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ import { ConversationsPage } from '@/features/conversations'
 import { SkillsPage } from '@/features/skills'
 import { ToolsPage } from '@/features/tools'
 import { SettingsPage } from '@/features/settings'
+import { HooksPage } from '@/features/hooks'
 import { cn } from '@/lib/utils'
 
 type AppTab =
@@ -32,6 +34,7 @@ type AppTab =
   | 'learnings'
   | 'session-memory'
   | 'sessions'
+  | 'hooks'
   | 'skills'
   | 'tools'
   | 'settings'
@@ -43,6 +46,7 @@ const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?:
   { id: 'learnings', label: 'Learnings', icon: BookOpen },
   { id: 'session-memory', label: 'Session Memory', icon: Database },
   { id: 'sessions', label: 'Sessions', icon: History },
+  { id: 'hooks', label: 'Hooks', icon: Webhook },
   { id: 'skills', label: 'Skills', icon: Zap },
   { id: 'tools', label: 'Tools', icon: Wrench },
   { id: 'settings', label: 'Settings', icon: Settings2 },
@@ -161,6 +165,14 @@ function App() {
         hidden={activeTab !== 'sessions'}
       >
         {activeTab === 'sessions' && <ConversationsPage />}
+      </div>
+      <div
+        id="panel-hooks"
+        role="tabpanel"
+        aria-labelledby="hooks-tab"
+        hidden={activeTab !== 'hooks'}
+      >
+        {activeTab === 'hooks' && <HooksPage />}
       </div>
       <div
         id="panel-skills"
