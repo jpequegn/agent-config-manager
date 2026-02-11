@@ -1,14 +1,15 @@
 import { useState, useRef } from 'react'
-import { FolderSearch, BookOpen, History, Zap, Wrench } from 'lucide-react'
+import { FolderSearch, BookOpen, History, Zap, Wrench, Settings2 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
 import { ProjectContextPage, LearningsPage } from '@/features/memory'
 import { ConversationsPage } from '@/features/conversations'
 import { SkillsPage } from '@/features/skills'
 import { ToolsPage } from '@/features/tools'
+import { SettingsPage } from '@/features/settings'
 import { cn } from '@/lib/utils'
 
-type AppTab = 'project-context' | 'learnings' | 'sessions' | 'skills' | 'tools'
+type AppTab = 'project-context' | 'learnings' | 'sessions' | 'skills' | 'tools' | 'settings'
 
 const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'project-context', label: 'Project Context', icon: FolderSearch },
@@ -16,6 +17,7 @@ const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?:
   { id: 'sessions', label: 'Sessions', icon: History },
   { id: 'skills', label: 'Skills', icon: Zap },
   { id: 'tools', label: 'Tools', icon: Wrench },
+  { id: 'settings', label: 'Settings', icon: Settings2 },
 ]
 
 function App() {
@@ -123,6 +125,14 @@ function App() {
         hidden={activeTab !== 'tools'}
       >
         {activeTab === 'tools' && <ToolsPage />}
+      </div>
+      <div
+        id="panel-settings"
+        role="tabpanel"
+        aria-labelledby="settings-tab"
+        hidden={activeTab !== 'settings'}
+      >
+        {activeTab === 'settings' && <SettingsPage />}
       </div>
     </AppShell>
   )
