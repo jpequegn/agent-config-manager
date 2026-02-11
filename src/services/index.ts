@@ -20,3 +20,6 @@ export * from './sessions'
 
 // Skills service
 export * from './skills'
+
+// Tools service
+export * from './tools'

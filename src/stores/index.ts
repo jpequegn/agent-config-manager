@@ -77,3 +77,14 @@ export {
   useIsSkillsLoading,
   useActiveSkillTab,
 } from './skills-store'
+
+// Tools store
+export type { ToolDetailTab } from './tools-store'
+export {
+  useToolsStore,
+  useTools,
+  useSelectedTool,
+  useMCPServers,
+  useIsToolsLoading,
+  useActiveToolTab,
+} from './tools-store'
