@@ -26,3 +26,6 @@ export * from './tools'
 
 // Settings service
 export * from './settings'
+
+// Memory service
+export * from './memory'

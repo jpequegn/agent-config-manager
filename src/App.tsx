@@ -1,17 +1,25 @@
 import { useState, useRef } from 'react'
-import { FolderSearch, BookOpen, History, Zap, Wrench, Settings2 } from 'lucide-react'
+import { FolderSearch, BookOpen, History, Zap, Wrench, Settings2, BarChart3 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
-import { ProjectContextPage, LearningsPage } from '@/features/memory'
+import { ProjectContextPage, LearningsPage, MemoryDashboard } from '@/features/memory'
 import { ConversationsPage } from '@/features/conversations'
 import { SkillsPage } from '@/features/skills'
 import { ToolsPage } from '@/features/tools'
 import { SettingsPage } from '@/features/settings'
 import { cn } from '@/lib/utils'
 
-type AppTab = 'project-context' | 'learnings' | 'sessions' | 'skills' | 'tools' | 'settings'
+type AppTab =
+  | 'memory'
+  | 'project-context'
+  | 'learnings'
+  | 'sessions'
+  | 'skills'
+  | 'tools'
+  | 'settings'
 
 const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'memory', label: 'Memory', icon: BarChart3 },
   { id: 'project-context', label: 'Project Context', icon: FolderSearch },
   { id: 'learnings', label: 'Learnings', icon: BookOpen },
   { id: 'sessions', label: 'Sessions', icon: History },
@@ -21,7 +29,7 @@ const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?:
 ]
 
 function App() {
-  const [activeTab, setActiveTab] = useState<AppTab>('project-context')
+  const [activeTab, setActiveTab] = useState<AppTab>('memory')
   const tabButtonsRef = useRef<(HTMLButtonElement | null)[]>([])
 
   // Handle keyboard navigation in tab list
@@ -86,6 +94,14 @@ function App() {
         </div>
       }
     >
+      <div
+        id="panel-memory"
+        role="tabpanel"
+        aria-labelledby="memory-tab"
+        hidden={activeTab !== 'memory'}
+      >
+        {activeTab === 'memory' && <MemoryDashboard />}
+      </div>
       <div
         id="panel-project-context"
         role="tabpanel"
