@@ -1,7 +1,18 @@
 /**
  * Skills Service
- * Exports skill browsing and retrieval
+ * Exports skill browsing, management, and retrieval
  */
 
-export { listSkills, getSkill, getSkillListStats, SKILL_CATEGORIES } from './service'
-export type { SkillListStats, SkillFilterOptions } from './service'
+export type { SkillListStats, SkillFilterOptions, SkillValidationResult } from './service'
+export {
+  listSkills,
+  getSkill,
+  getSkillListStats,
+  SKILL_CATEGORIES,
+  validateSkillContent,
+  saveSkill,
+  toggleSkillStatus,
+  duplicateSkill,
+  duplicateSkillToHarness,
+  deleteSkill,
+} from './service'

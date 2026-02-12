@@ -2,10 +2,17 @@
  * SkillsPage Component Tests
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@/test/utils'
 import { SkillsPage } from './SkillsPage'
 import { useSkillsStore } from '@/stores'
+
+// Mock Monaco Editor since it requires web workers
+vi.mock('@monaco-editor/react', () => ({
+  default: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <textarea data-testid="mock-monaco" value={value} onChange={(e) => onChange(e.target.value)} />
+  ),
+}))
 
 describe('SkillsPage', () => {
   beforeEach(() => {
@@ -27,11 +34,14 @@ describe('SkillsPage', () => {
     expect(screen.getByText('Browse and manage agent skills')).toBeInTheDocument()
   })
 
-  it('should render the refresh button', async () => {
+  it('should render the more actions menu button', async () => {
     render(<SkillsPage />)
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /refresh/i })).toBeInTheDocument()
-    })
+    expect(screen.getByRole('button', { name: /more actions/i })).toBeInTheDocument()
+  })
+
+  it('should show New Skill button', () => {
+    render(<SkillsPage />)
+    expect(screen.getByRole('button', { name: /create new skill/i })).toBeInTheDocument()
   })
 
   it('should show empty state for skill detail', () => {

@@ -3,7 +3,18 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { listSkills, getSkill, getSkillListStats, SKILL_CATEGORIES } from './service'
+import {
+  listSkills,
+  getSkill,
+  getSkillListStats,
+  SKILL_CATEGORIES,
+  validateSkillContent,
+  saveSkill,
+  toggleSkillStatus,
+  duplicateSkill,
+  duplicateSkillToHarness,
+  deleteSkill,
+} from './service'
 
 describe('SkillsService', () => {
   describe('listSkills', () => {
@@ -122,6 +133,156 @@ describe('SkillsService', () => {
         expect(cat.value).toBeTruthy()
         expect(cat.label).toBeTruthy()
       }
+    })
+  })
+
+  describe('validateSkillContent', () => {
+    it('should pass for valid content', async () => {
+      const result = await validateSkillContent(
+        'My Skill',
+        '# My Skill\n\nDoes things.',
+        'development'
+      )
+      expect(result.valid).toBe(true)
+      expect(result.errors).toEqual([])
+    })
+
+    it('should fail for empty name', async () => {
+      const result = await validateSkillContent('', '# Content', 'development')
+      expect(result.valid).toBe(false)
+      expect(result.errors).toContain('Skill name is required')
+    })
+
+    it('should fail for empty content', async () => {
+      const result = await validateSkillContent('Name', '', 'development')
+      expect(result.valid).toBe(false)
+      expect(result.errors).toContain('Skill content is required')
+    })
+
+    it('should warn for short content', async () => {
+      const result = await validateSkillContent('Name', '# Short', 'development')
+      expect(result.warnings.length).toBeGreaterThan(0)
+    })
+
+    it('should warn when content lacks heading', async () => {
+      const result = await validateSkillContent(
+        'Name',
+        'No heading here, just text content.',
+        'development'
+      )
+      expect(result.warnings).toContain('Skill content should start with a markdown heading')
+    })
+  })
+
+  describe('saveSkill', () => {
+    it('should create a new skill', async () => {
+      const skill = await saveSkill({
+        name: 'New Test Skill',
+        description: 'A brand new skill',
+        category: 'testing',
+        content: '# New Test Skill\n\nContent here.',
+        harness: 'claude-code',
+      })
+      expect(skill.id).toBeTruthy()
+      expect(skill.metadata.name).toBe('New Test Skill')
+      expect(skill.status).toBe('enabled')
+    })
+
+    it('should update an existing skill', async () => {
+      const skills = await listSkills()
+      const existing = skills[0]
+      const updated = await saveSkill(
+        {
+          name: 'Updated Name',
+          description: 'Updated desc',
+          category: 'core',
+          content: '# Updated',
+          harness: existing.harness,
+        },
+        existing.id
+      )
+      expect(updated.metadata.name).toBe('Updated Name')
+    })
+
+    it('should throw for unknown skill ID on update', async () => {
+      await expect(
+        saveSkill(
+          {
+            name: 'X',
+            description: 'X',
+            category: 'core',
+            content: '# X',
+            harness: 'claude-code',
+          },
+          'nonexistent-id'
+        )
+      ).rejects.toThrow()
+    })
+  })
+
+  describe('toggleSkillStatus', () => {
+    it('should toggle from enabled to disabled', async () => {
+      const skills = await listSkills({ status: 'enabled' })
+      const id = skills[0].id
+      const toggled = await toggleSkillStatus(id)
+      expect(toggled.status).toBe('disabled')
+    })
+
+    it('should throw for unknown ID', async () => {
+      await expect(toggleSkillStatus('nonexistent')).rejects.toThrow()
+    })
+  })
+
+  describe('duplicateSkill', () => {
+    it('should create a copy with (copy) suffix', async () => {
+      const skills = await listSkills()
+      const original = skills[0]
+      const copy = await duplicateSkill(original.id)
+      expect(copy.metadata.name).toContain('(copy)')
+      expect(copy.id).not.toBe(original.id)
+      expect(copy.status).toBe('disabled')
+      expect(copy.stats.invocationCount).toBe(0)
+    })
+
+    it('should throw for unknown ID', async () => {
+      await expect(duplicateSkill('nonexistent')).rejects.toThrow()
+    })
+  })
+
+  describe('duplicateSkillToHarness', () => {
+    it('should duplicate to a different harness', async () => {
+      const skills = await listSkills({ harness: 'claude-code' })
+      const original = skills[0]
+      const copy = await duplicateSkillToHarness(original.id, 'cursor')
+      expect(copy.harness).toBe('cursor')
+      expect(copy.id).not.toBe(original.id)
+      expect(copy.status).toBe('disabled')
+    })
+
+    it('should throw for unknown ID', async () => {
+      await expect(duplicateSkillToHarness('nonexistent', 'cursor')).rejects.toThrow()
+    })
+  })
+
+  describe('deleteSkill', () => {
+    it('should delete an existing skill', async () => {
+      const created = await saveSkill({
+        name: 'To Delete',
+        description: 'Will be deleted',
+        category: 'custom',
+        content: '# To Delete',
+        harness: 'cline',
+      })
+      const result = await deleteSkill(created.id)
+      expect(result.success).toBe(true)
+
+      const skill = await getSkill(created.id)
+      expect(skill).toBeNull()
+    })
+
+    it('should return failure for unknown ID', async () => {
+      const result = await deleteSkill('nonexistent')
+      expect(result.success).toBe(false)
     })
   })
 })
