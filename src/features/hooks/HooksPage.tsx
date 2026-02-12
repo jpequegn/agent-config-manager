@@ -12,7 +12,8 @@ import { getHooksGroupedByTrigger, toggleHookStatus } from '@/services/hooks'
 import { HookGroupSection } from './HookGroupSection'
 import { BulkHookActions } from './BulkHookActions'
 import { HookEditor } from './HookEditor'
-import type { HookTrigger } from '@/types'
+import { HookTemplatesGallery } from './HookTemplatesGallery'
+import type { HookTrigger, HookTemplate } from '@/types'
 
 const TRIGGER_FILTERS: { value: HookTrigger | null; label: string }[] = [
   { value: null, label: 'All Triggers' },
@@ -29,6 +30,7 @@ const TRIGGER_FILTERS: { value: HookTrigger | null; label: string }[] = [
 export function HooksPage() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingHookId, setEditingHookId] = useState<string | null>(null)
+  const [editorTemplate, setEditorTemplate] = useState<HookTemplate | null>(null)
   const hookGroups = useHooksStore((s) => s.hookGroups)
   const isLoading = useHooksStore((s) => s.isLoading)
   const filterTrigger = useHooksStore((s) => s.filterTrigger)
@@ -91,6 +93,7 @@ export function HooksPage() {
             size="sm"
             onClick={() => {
               setEditingHookId(null)
+              setEditorTemplate(null)
               setEditorOpen(true)
             }}
             aria-label="Create new hook"
@@ -170,8 +173,19 @@ export function HooksPage() {
         </div>
       )}
 
-      {/* Hook groups */}
+      {/* Hook groups + templates */}
       <div className="flex-1 overflow-auto px-6 py-4">
+        {/* Templates gallery */}
+        <div className="mb-6">
+          <HookTemplatesGallery
+            onUseTemplate={(tpl) => {
+              setEditingHookId(null)
+              setEditorTemplate(tpl)
+              setEditorOpen(true)
+            }}
+          />
+        </div>
+
         {filteredGroups.map((group) => (
           <HookGroupSection
             key={group.trigger}
@@ -182,6 +196,7 @@ export function HooksPage() {
             onToggleStatus={handleToggleStatus}
             onEdit={(id) => {
               setEditingHookId(id)
+              setEditorTemplate(null)
               setEditorOpen(true)
             }}
           />
@@ -196,7 +211,15 @@ export function HooksPage() {
         )}
       </div>
       {/* Hook editor dialog */}
-      <HookEditor hookId={editingHookId} open={editorOpen} onOpenChange={setEditorOpen} />
+      <HookEditor
+        hookId={editingHookId}
+        open={editorOpen}
+        onOpenChange={(open) => {
+          setEditorOpen(open)
+          if (!open) setEditorTemplate(null)
+        }}
+        template={editorTemplate}
+      />
     </div>
   )
 }

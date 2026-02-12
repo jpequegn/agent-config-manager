@@ -20,6 +20,9 @@ import {
   clearHookLogs,
   getHookExecutionStats,
   runHookTest,
+  listTemplates,
+  getTemplatesByCategory,
+  getTemplate,
 } from './service'
 
 describe('Hooks Service', () => {
@@ -338,5 +341,53 @@ describe('runHookTest', () => {
     const logs = await getHookLogs('hook-3')
     expect(logs.length).toBeGreaterThan(0)
     expect(logs[0].input).toBe('{"tool":"Read"}')
+  })
+})
+
+describe('listTemplates', () => {
+  it('should return built-in templates', async () => {
+    const templates = await listTemplates()
+    expect(templates.length).toBeGreaterThanOrEqual(7)
+    expect(templates[0]).toHaveProperty('id')
+    expect(templates[0]).toHaveProperty('name')
+    expect(templates[0]).toHaveProperty('category')
+    expect(templates[0]).toHaveProperty('scriptTemplate')
+  })
+})
+
+describe('getTemplatesByCategory', () => {
+  it('should group templates by category', async () => {
+    const groups = await getTemplatesByCategory()
+    expect(groups.length).toBeGreaterThan(0)
+    for (const group of groups) {
+      expect(group.category).toHaveProperty('id')
+      expect(group.category).toHaveProperty('label')
+      expect(group.templates.length).toBeGreaterThan(0)
+      for (const tpl of group.templates) {
+        expect(tpl.category).toBe(group.category.id)
+      }
+    }
+  })
+
+  it('should include security, logging, and notifications categories', async () => {
+    const groups = await getTemplatesByCategory()
+    const ids = groups.map((g) => g.category.id)
+    expect(ids).toContain('security')
+    expect(ids).toContain('logging')
+    expect(ids).toContain('notifications')
+  })
+})
+
+describe('getTemplate', () => {
+  it('should return a template by ID', async () => {
+    const tpl = await getTemplate('tpl-secret-scanner')
+    expect(tpl).not.toBeNull()
+    expect(tpl!.name).toBe('Secret Scanner')
+    expect(tpl!.category).toBe('security')
+  })
+
+  it('should return null for unknown template ID', async () => {
+    const tpl = await getTemplate('nonexistent')
+    expect(tpl).toBeNull()
   })
 })
