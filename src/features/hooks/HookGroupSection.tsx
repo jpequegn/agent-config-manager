@@ -35,6 +35,8 @@ interface Props {
   onToggleSelect: (id: string) => void
   onToggleStatus: (id: string) => void
   onEdit: (id: string) => void
+  onDuplicate?: (id: string) => void
+  onDelete?: (id: string) => void
 }
 
 export function HookGroupSection({
@@ -44,6 +46,8 @@ export function HookGroupSection({
   onToggleSelect,
   onToggleStatus,
   onEdit,
+  onDuplicate,
+  onDelete,
 }: Props) {
   const enabledCount = hooks.filter((h) => h.status === 'enabled').length
 
@@ -67,6 +71,8 @@ export function HookGroupSection({
             onToggleSelect={() => onToggleSelect(hook.id)}
             onToggleStatus={() => onToggleStatus(hook.id)}
             onEdit={() => onEdit(hook.id)}
+            onDuplicate={onDuplicate ? () => onDuplicate(hook.id) : undefined}
+            onDelete={onDelete ? () => onDelete(hook.id) : undefined}
           />
         ))}
       </div>

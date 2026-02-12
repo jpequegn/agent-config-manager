@@ -33,9 +33,9 @@ describe('HooksPage', () => {
     expect(screen.getByText('Manage automation hooks by trigger type')).toBeInTheDocument()
   })
 
-  it('should render the refresh button', () => {
+  it('should render the more actions menu button', () => {
     render(<HooksPage />)
-    expect(screen.getByRole('button', { name: /refresh hooks list/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /more actions/i })).toBeInTheDocument()
   })
 
   it('should show trigger filter pills', () => {

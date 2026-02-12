@@ -3,7 +3,7 @@
  * Displays a single hook with name, harness badge, trigger, toggle, and stats
  */
 
-import { GripVertical, AlertCircle, Pencil } from 'lucide-react'
+import { GripVertical, AlertCircle, Pencil, Copy, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { harnessConfigs } from '@/components/harness/harness-config'
 import type { HookSummary } from '@/types'
@@ -14,9 +14,19 @@ interface Props {
   onToggleSelect: () => void
   onToggleStatus: () => void
   onEdit: () => void
+  onDuplicate?: () => void
+  onDelete?: () => void
 }
 
-export function HookCard({ hook, isSelected, onToggleSelect, onToggleStatus, onEdit }: Props) {
+export function HookCard({
+  hook,
+  isSelected,
+  onToggleSelect,
+  onToggleStatus,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: Props) {
   const harnessConfig = harnessConfigs[hook.harness]
   const isEnabled = hook.status === 'enabled'
   const isError = hook.status === 'error'
@@ -68,15 +78,35 @@ export function HookCard({ hook, isSelected, onToggleSelect, onToggleStatus, onE
         </div>
       </div>
 
-      {/* Edit + Stats */}
+      {/* Actions + Stats */}
       <div className="flex shrink-0 items-center gap-4 text-xs text-muted-foreground">
-        <button
-          onClick={onEdit}
-          className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          aria-label={`Edit ${hook.name}`}
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={onEdit}
+            className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            aria-label={`Edit ${hook.name}`}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          {onDuplicate && (
+            <button
+              onClick={onDuplicate}
+              className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label={`Duplicate ${hook.name}`}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="rounded p-1 text-muted-foreground hover:bg-red-500/20 hover:text-red-500 transition-colors"
+              aria-label={`Delete ${hook.name}`}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
         <div className="text-right">
           <div>{hook.runCount} runs</div>
           {hook.blockCount > 0 && <div className="text-yellow-500">{hook.blockCount} blocked</div>}
