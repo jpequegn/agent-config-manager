@@ -24,7 +24,7 @@ import {
   validateHookConfig,
 } from '@/services/hooks'
 import { useHooksStore } from '@/stores/hooks-store'
-import type { HookTrigger, CreateHookOptions, HarnessType } from '@/types'
+import type { HookTrigger, HookTemplate, CreateHookOptions, HarnessType } from '@/types'
 
 const TRIGGERS: { value: HookTrigger; label: string }[] = [
   { value: 'PreToolUse', label: 'Pre Tool Use' },
@@ -63,9 +63,10 @@ interface Props {
   hookId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  template?: HookTemplate | null
 }
 
-export function HookEditor({ hookId, open, onOpenChange }: Props) {
+export function HookEditor({ hookId, open, onOpenChange, template }: Props) {
   const setHookGroups = useHooksStore((s) => s.setHookGroups)
 
   const [name, setName] = useState('')
@@ -80,7 +81,7 @@ export function HookEditor({ hookId, open, onOpenChange }: Props) {
   const [errors, setErrors] = useState<string[]>([])
   const [isSaving, setIsSaving] = useState(false)
 
-  // Load existing hook data
+  // Load existing hook data or template data
   useEffect(() => {
     if (!open) return
     if (hookId) {
@@ -99,6 +100,17 @@ export function HookEditor({ hookId, open, onOpenChange }: Props) {
           )
         }
       })
+    } else if (template) {
+      // Pre-fill from template
+      setName(template.name)
+      setDescription(template.description)
+      setTrigger(template.config.trigger)
+      setToolMatcher(template.config.toolMatcher ?? '')
+      setToolMatcherIsRegex(template.config.toolMatcherIsRegex ?? false)
+      setTimeout_(template.config.timeout ?? 5000)
+      setHarness('claude-code')
+      setLanguage(template.scriptLanguage)
+      setScriptContent(template.scriptTemplate)
     } else {
       // Reset for new hook
       setName('')
@@ -112,7 +124,7 @@ export function HookEditor({ hookId, open, onOpenChange }: Props) {
       setScriptContent(DEFAULT_SCRIPTS.bash)
     }
     setErrors([])
-  }, [hookId, open])
+  }, [hookId, open, template])
 
   const handleLanguageChange = useCallback(
     (lang: 'bash' | 'python' | 'node') => {

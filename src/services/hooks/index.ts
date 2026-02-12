@@ -9,6 +9,7 @@ export type {
   HookValidationResult,
   HookExecutionStats,
   HookTestResult,
+  TemplateCategory,
 } from './service'
 export {
   listHooks,
@@ -27,4 +28,8 @@ export {
   clearHookLogs,
   getHookExecutionStats,
   runHookTest,
+  listTemplates,
+  getTemplatesByCategory,
+  getTemplate,
+  TEMPLATE_CATEGORIES,
 } from './service'
