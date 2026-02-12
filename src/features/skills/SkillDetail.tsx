@@ -23,7 +23,7 @@ import { cn, formatRelativeTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { MarkdownRenderer } from '@/components/shared'
 import { useSelectedSkill, useActiveSkillTab, useSkillsStore } from '@/stores'
-import type { HarnessType, SkillCategory } from '@/types'
+import type { HarnessType, SkillCategory, Skill } from '@/types'
 import type { SkillDetailTab } from '@/stores'
 
 /** Harness badge colors */
@@ -63,7 +63,13 @@ const TABS: { id: SkillDetailTab; label: string; icon: typeof FileText }[] = [
   { id: 'history', label: 'History', icon: History },
 ]
 
-export function SkillDetail() {
+interface SkillDetailProps {
+  onEdit?: (skill: Skill) => void
+  onDuplicate?: (skill: Skill) => void
+  onToggleStatus?: (skill: Skill) => void
+}
+
+export function SkillDetail({ onEdit, onDuplicate, onToggleStatus }: SkillDetailProps = {}) {
   const skill = useSelectedSkill()
   const activeTab = useActiveSkillTab()
   const setActiveTab = useSkillsStore((s) => s.setActiveTab)
@@ -99,11 +105,23 @@ export function SkillDetail() {
 
           {/* Action buttons */}
           <div className="ml-4 flex shrink-0 items-center gap-1.5">
-            <Button variant="outline" size="sm" className="gap-1.5" aria-label="Edit skill">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              aria-label="Edit skill"
+              onClick={() => onEdit?.(skill)}
+            >
               <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
               Edit
             </Button>
-            <Button variant="outline" size="sm" className="gap-1.5" aria-label="Copy skill">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              aria-label="Copy skill"
+              onClick={() => onDuplicate?.(skill)}
+            >
               <Copy className="h-3.5 w-3.5" aria-hidden="true" />
               Copy
             </Button>
@@ -112,6 +130,7 @@ export function SkillDetail() {
               size="sm"
               className="gap-1.5"
               aria-label={skill.status === 'enabled' ? 'Disable skill' : 'Enable skill'}
+              onClick={() => onToggleStatus?.(skill)}
             >
               <Power className="h-3.5 w-3.5" aria-hidden="true" />
               {skill.status === 'enabled' ? 'Disable' : 'Enable'}

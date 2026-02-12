@@ -3,7 +3,8 @@
  * Manages skill browsing and retrieval with mock data
  */
 
-import type { HarnessType, Skill, SkillSummary, SkillCategory } from '@/types'
+import type { HarnessType, Skill, SkillSummary, SkillCategory, CreateSkillOptions } from '@/types'
+import { generateId } from '@/lib/utils'
 
 /** Skill aggregate statistics */
 export interface SkillListStats {
@@ -444,4 +445,177 @@ export async function getSkillListStats(): Promise<SkillListStats> {
       count,
     })),
   }
+}
+
+/** Validation result for skill content */
+export interface SkillValidationResult {
+  valid: boolean
+  errors: string[]
+  warnings: string[]
+}
+
+/**
+ * Validate skill content and metadata.
+ */
+export async function validateSkillContent(
+  name: string,
+  content: string,
+  category: SkillCategory
+): Promise<SkillValidationResult> {
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  const errors: string[] = []
+  const warnings: string[] = []
+
+  if (!name.trim()) {
+    errors.push('Skill name is required')
+  }
+  if (name.length > 100) {
+    errors.push('Skill name must be 100 characters or less')
+  }
+  if (!content.trim()) {
+    errors.push('Skill content is required')
+  }
+  if (content.length < 10) {
+    warnings.push('Skill content is very short — consider adding more detail')
+  }
+  if (!content.startsWith('#')) {
+    warnings.push('Skill content should start with a markdown heading')
+  }
+  if (!SKILL_CATEGORIES.some((c) => c.value === category)) {
+    errors.push(`Invalid category: ${category}`)
+  }
+
+  return { valid: errors.length === 0, errors, warnings }
+}
+
+/**
+ * Save a new or updated skill.
+ */
+export async function saveSkill(options: CreateSkillOptions, existingId?: string): Promise<Skill> {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  const now = new Date()
+
+  if (existingId) {
+    const existing = MOCK_SKILLS.find((s) => s.id === existingId)
+    if (!existing) throw new Error(`Skill not found: ${existingId}`)
+    existing.metadata.name = options.name
+    existing.metadata.description = options.description
+    existing.metadata.category = options.category
+    existing.content = options.content
+    if (options.triggers) existing.metadata.triggers = options.triggers
+    existing.updatedAt = now
+    return { ...existing }
+  }
+
+  const skill: Skill = {
+    id: generateId(),
+    harness: options.harness,
+    filePath: `~/.${options.harness === 'claude-code' ? 'claude' : options.harness}/skills/${options.name.toLowerCase().replace(/\s+/g, '-')}/SKILL.md`,
+    metadata: {
+      name: options.name,
+      description: options.description,
+      category: options.category,
+      triggers: options.triggers ?? [],
+      version: '1.0.0',
+    },
+    content: options.content,
+    status: 'enabled',
+    stats: { invocationCount: 0 },
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  MOCK_SKILLS.push(skill)
+  return { ...skill }
+}
+
+/**
+ * Toggle skill enabled/disabled status.
+ */
+export async function toggleSkillStatus(id: string): Promise<Skill> {
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const skill = MOCK_SKILLS.find((s) => s.id === id)
+  if (!skill) throw new Error(`Skill not found: ${id}`)
+
+  skill.status = skill.status === 'enabled' ? 'disabled' : 'enabled'
+  skill.updatedAt = new Date()
+  return { ...skill }
+}
+
+/**
+ * Duplicate a skill within the same harness.
+ */
+export async function duplicateSkill(id: string): Promise<Skill> {
+  await new Promise((resolve) => setTimeout(resolve, 150))
+
+  const original = MOCK_SKILLS.find((s) => s.id === id)
+  if (!original) throw new Error(`Skill not found: ${id}`)
+
+  const now = new Date()
+  const copy: Skill = {
+    ...structuredClone(original),
+    id: generateId(),
+    metadata: {
+      ...structuredClone(original.metadata),
+      name: `${original.metadata.name} (copy)`,
+      version: '1.0.0',
+    },
+    status: 'disabled',
+    stats: { invocationCount: 0 },
+    history: [],
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  MOCK_SKILLS.push(copy)
+  return copy
+}
+
+/**
+ * Duplicate a skill to a different harness.
+ */
+export async function duplicateSkillToHarness(
+  id: string,
+  targetHarness: HarnessType
+): Promise<Skill> {
+  await new Promise((resolve) => setTimeout(resolve, 150))
+
+  const original = MOCK_SKILLS.find((s) => s.id === id)
+  if (!original) throw new Error(`Skill not found: ${id}`)
+
+  const now = new Date()
+  const copy: Skill = {
+    ...structuredClone(original),
+    id: generateId(),
+    harness: targetHarness,
+    filePath: `~/.${targetHarness === 'claude-code' ? 'claude' : targetHarness}/skills/${original.metadata.name.toLowerCase().replace(/\s+/g, '-')}/SKILL.md`,
+    metadata: {
+      ...structuredClone(original.metadata),
+      version: '1.0.0',
+    },
+    status: 'disabled',
+    stats: { invocationCount: 0 },
+    history: [],
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  MOCK_SKILLS.push(copy)
+  return copy
+}
+
+/**
+ * Delete a skill by ID.
+ */
+export async function deleteSkill(id: string): Promise<{ success: boolean; message: string }> {
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const index = MOCK_SKILLS.findIndex((s) => s.id === id)
+  if (index === -1) return { success: false, message: `Skill not found: ${id}` }
+
+  MOCK_SKILLS.splice(index, 1)
+  return { success: true, message: 'Skill deleted successfully' }
 }
