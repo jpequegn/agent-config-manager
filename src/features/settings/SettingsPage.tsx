@@ -1,6 +1,6 @@
 /**
  * SettingsPage Component
- * Main page for settings viewer with category tree and settings list
+ * Main page for settings editor with inline editing, validation, diff preview, and save/discard
  */
 
 import { useEffect, useState } from 'react'
@@ -13,10 +13,11 @@ import {
   useIsSettingsLoading,
   useSettingsViewMode,
 } from '@/stores'
-import { listSettings, getSettingsRaw } from '@/services/settings'
+import { listSettings, getSettingsRaw, updateSetting, resetSetting } from '@/services/settings'
 import type { SettingValue } from '@/types'
 import { SettingsTree } from './SettingsTree'
 import { SettingsList } from './SettingsList'
+import { DiffPreview } from './DiffPreview'
 
 export function SettingsPage() {
   const settings = useSettingsList()
@@ -30,6 +31,9 @@ export function SettingsPage() {
   const modifiedOnly = useSettingsStore((s) => s.modifiedOnly)
 
   const [rawData, setRawData] = useState<Record<string, SettingValue> | null>(null)
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [message, setMessage] = useState<string | null>(null)
 
   /** Load settings with current filters */
   async function handleLoad() {
@@ -54,7 +58,49 @@ export function SettingsPage() {
     handleLoad()
   }, [searchQuery, activeCategory, modifiedOnly]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Clear message after delay
+  useEffect(() => {
+    if (!message) return
+    const timer = setTimeout(() => setMessage(null), 3000)
+    return () => clearTimeout(timer)
+  }, [message])
+
   const modifiedCount = settings.filter((s) => s.current.isModified).length
+
+  async function handleUpdateSetting(key: string, value: SettingValue) {
+    const result = await updateSetting(key, value)
+    if (!result.success && result.error) {
+      setValidationErrors((prev) => ({ ...prev, [key]: result.error! }))
+    } else {
+      setValidationErrors((prev) => {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
+      setRefreshTrigger((n) => n + 1)
+    }
+  }
+
+  async function handleResetSetting(key: string) {
+    await resetSetting(key)
+    setValidationErrors((prev) => {
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+    setRefreshTrigger((n) => n + 1)
+  }
+
+  function handleSaved() {
+    setMessage('Settings saved')
+    handleLoad()
+  }
+
+  function handleDiscarded() {
+    setMessage('Changes discarded')
+    setValidationErrors({})
+    handleLoad()
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -68,6 +114,11 @@ export function SettingsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {message && (
+            <span className="text-xs text-green-400" role="status">
+              {message}
+            </span>
+          )}
           <span className="text-sm text-muted-foreground" role="status" aria-live="polite">
             {modifiedCount} modified / {settings.length} total
           </span>
@@ -128,10 +179,23 @@ export function SettingsPage() {
             <SettingsTree />
           </div>
 
-          {/* Right panel - Settings list */}
-          <div className="flex-1">
-            <h2 className="sr-only">Settings List</h2>
-            <SettingsList />
+          {/* Right panel - Settings list with inline editing */}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex-1 overflow-auto">
+              <h2 className="sr-only">Settings List</h2>
+              <SettingsList
+                onUpdate={handleUpdateSetting}
+                onReset={handleResetSetting}
+                validationErrors={validationErrors}
+              />
+            </div>
+
+            {/* Diff preview */}
+            <DiffPreview
+              onSaved={handleSaved}
+              onDiscarded={handleDiscarded}
+              refreshTrigger={refreshTrigger}
+            />
           </div>
         </div>
       ) : (

@@ -9,6 +9,13 @@ import {
   getSettingsRaw,
   getSettingsStats,
   SETTING_CATEGORIES,
+  validateSettingValue,
+  updateSetting,
+  resetSetting,
+  getPendingChanges,
+  saveAllChanges,
+  discardAllChanges,
+  hasPendingChanges,
 } from './service'
 
 describe('SettingsService', () => {
@@ -100,6 +107,117 @@ describe('SettingsService', () => {
         expect(cat.value).toBeTruthy()
         expect(cat.label).toBeTruthy()
       }
+    })
+  })
+
+  describe('validateSettingValue', () => {
+    it('should pass valid number within range', () => {
+      const err = validateSettingValue('general.autoRefreshInterval', 60)
+      expect(err).toBeNull()
+    })
+
+    it('should fail number below min', () => {
+      const err = validateSettingValue('general.autoRefreshInterval', -1)
+      expect(err).not.toBeNull()
+      expect(err!.message).toContain('Minimum')
+    })
+
+    it('should fail number above max', () => {
+      const err = validateSettingValue('general.autoRefreshInterval', 999)
+      expect(err).not.toBeNull()
+      expect(err!.message).toContain('Maximum')
+    })
+
+    it('should fail NaN for number type', () => {
+      const err = validateSettingValue(
+        'general.autoRefreshInterval',
+        'notanumber' as unknown as number
+      )
+      expect(err).not.toBeNull()
+      expect(err!.message).toContain('number')
+    })
+
+    it('should pass valid select option', () => {
+      const err = validateSettingValue('appearance.theme', 'dark')
+      expect(err).toBeNull()
+    })
+
+    it('should fail invalid select option', () => {
+      const err = validateSettingValue('appearance.theme', 'rainbow')
+      expect(err).not.toBeNull()
+      expect(err!.message).toContain('Invalid option')
+    })
+
+    it('should fail for unknown key', () => {
+      const err = validateSettingValue('nonexistent.key', 'value')
+      expect(err).not.toBeNull()
+      expect(err!.message).toContain('Unknown')
+    })
+  })
+
+  describe('updateSetting', () => {
+    it('should stage a valid change', async () => {
+      const result = await updateSetting('appearance.theme', 'light')
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject invalid value', async () => {
+      const result = await updateSetting('general.autoRefreshInterval', -1)
+      expect(result.success).toBe(false)
+      expect(result.error).toBeTruthy()
+    })
+  })
+
+  describe('resetSetting', () => {
+    it('should reset to default', async () => {
+      const result = await resetSetting('appearance.theme')
+      expect(result.success).toBe(true)
+    })
+
+    it('should fail for unknown key', async () => {
+      const result = await resetSetting('nonexistent')
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('getPendingChanges', () => {
+    it('should return staged changes', async () => {
+      await discardAllChanges()
+      await updateSetting('appearance.fontSize', 18)
+      const changes = await getPendingChanges()
+      expect(changes.length).toBeGreaterThan(0)
+      expect(changes.some((c) => c.key === 'appearance.fontSize')).toBe(true)
+    })
+  })
+
+  describe('saveAllChanges', () => {
+    it('should save pending changes', async () => {
+      await discardAllChanges()
+      await updateSetting('appearance.compactMode', true)
+      const result = await saveAllChanges()
+      expect(result.success).toBe(true)
+      expect(result.savedCount).toBeGreaterThan(0)
+    })
+  })
+
+  describe('discardAllChanges', () => {
+    it('should clear all pending changes', async () => {
+      await updateSetting('appearance.fontSize', 20)
+      await discardAllChanges()
+      expect(hasPendingChanges()).toBe(false)
+    })
+  })
+
+  describe('hasPendingChanges', () => {
+    it('should return true when changes exist', async () => {
+      await discardAllChanges()
+      await updateSetting('editor.tabSize', 4)
+      expect(hasPendingChanges()).toBe(true)
+    })
+
+    it('should return false after discard', async () => {
+      await discardAllChanges()
+      expect(hasPendingChanges()).toBe(false)
     })
   })
 })

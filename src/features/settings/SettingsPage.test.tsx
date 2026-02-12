@@ -7,9 +7,11 @@ import { render, screen, waitFor } from '@/test/utils'
 import { userEvent } from '@testing-library/user-event'
 import { SettingsPage } from './SettingsPage'
 import { useSettingsStore } from '@/stores'
+import { discardAllChanges } from '@/services/settings'
 
 describe('SettingsPage', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await discardAllChanges()
     const store = useSettingsStore.getState()
     store.setSettings([])
     store.selectKey(null)
@@ -68,6 +70,14 @@ describe('SettingsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Default Harness')).toBeInTheDocument()
       expect(screen.getByText('Theme')).toBeInTheDocument()
+    })
+  })
+
+  it('should show edit buttons on settings', async () => {
+    render(<SettingsPage />)
+    await waitFor(() => {
+      const editButtons = screen.getAllByLabelText(/^Edit /)
+      expect(editButtons.length).toBeGreaterThan(0)
     })
   })
 
