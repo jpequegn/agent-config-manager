@@ -10,6 +10,10 @@ export type {
   HookExecutionStats,
   HookTestResult,
   TemplateCategory,
+  HookExportData,
+  HookExportEntry,
+  HookImportResult,
+  CommunityHookSource,
 } from './service'
 export {
   listHooks,
@@ -32,4 +36,11 @@ export {
   getTemplatesByCategory,
   getTemplate,
   TEMPLATE_CATEGORIES,
+  exportHooks,
+  exportAllHooks,
+  importHooks,
+  importHooksFromUrl,
+  duplicateHook,
+  deleteHook,
+  listCommunitySources,
 } from './service'

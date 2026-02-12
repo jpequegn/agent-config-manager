@@ -23,6 +23,13 @@ import {
   listTemplates,
   getTemplatesByCategory,
   getTemplate,
+  exportHooks,
+  exportAllHooks,
+  importHooks,
+  importHooksFromUrl,
+  duplicateHook,
+  deleteHook,
+  listCommunitySources,
 } from './service'
 
 describe('Hooks Service', () => {
@@ -389,5 +396,147 @@ describe('getTemplate', () => {
   it('should return null for unknown template ID', async () => {
     const tpl = await getTemplate('nonexistent')
     expect(tpl).toBeNull()
+  })
+})
+
+describe('exportHooks', () => {
+  it('should export specific hooks by ID', async () => {
+    const data = await exportHooks(['hook-1', 'hook-2'])
+    expect(data.version).toBe(1)
+    expect(data.exportedAt).toBeTruthy()
+    expect(data.hooks).toHaveLength(2)
+    expect(data.hooks[0]).toHaveProperty('name')
+    expect(data.hooks[0]).toHaveProperty('config')
+    expect(data.hooks[0]).toHaveProperty('scriptContent')
+  })
+
+  it('should return empty hooks for unknown IDs', async () => {
+    const data = await exportHooks(['nonexistent'])
+    expect(data.hooks).toHaveLength(0)
+  })
+})
+
+describe('exportAllHooks', () => {
+  it('should export all hooks', async () => {
+    const data = await exportAllHooks()
+    expect(data.hooks.length).toBeGreaterThanOrEqual(10)
+    expect(data.version).toBe(1)
+  })
+})
+
+describe('importHooks', () => {
+  it('should import valid hook data', async () => {
+    const exportData = JSON.stringify({
+      version: 1,
+      hooks: [
+        {
+          name: 'Test import hook',
+          config: { trigger: 'PreToolUse' },
+          scriptContent: '#!/bin/bash\nexit 0',
+          scriptLanguage: 'bash',
+          harness: 'claude-code',
+        },
+      ],
+    })
+    const result = await importHooks(exportData)
+    expect(result.success).toBe(true)
+    expect(result.imported).toBe(1)
+    expect(result.errors).toHaveLength(0)
+  })
+
+  it('should reject invalid JSON', async () => {
+    const result = await importHooks('not json')
+    expect(result.success).toBe(false)
+    expect(result.errors).toContain('Invalid JSON format')
+  })
+
+  it('should reject missing version', async () => {
+    const result = await importHooks(JSON.stringify({ hooks: [] }))
+    expect(result.success).toBe(false)
+    expect(result.errors[0]).toContain('Invalid hook export format')
+  })
+
+  it('should skip hooks with missing name or trigger', async () => {
+    const data = JSON.stringify({
+      version: 1,
+      hooks: [
+        { config: { trigger: 'PreToolUse' }, scriptContent: 'exit 0', scriptLanguage: 'bash' },
+        {
+          name: 'Valid hook',
+          config: { trigger: 'Stop' },
+          scriptContent: 'exit 0',
+          scriptLanguage: 'bash',
+        },
+      ],
+    })
+    const result = await importHooks(data)
+    expect(result.imported).toBe(1)
+    expect(result.skipped).toBe(1)
+  })
+})
+
+describe('importHooksFromUrl', () => {
+  it('should reject invalid URL', async () => {
+    const result = await importHooksFromUrl('not-a-url')
+    expect(result.success).toBe(false)
+    expect(result.errors).toContain('Invalid URL')
+  })
+
+  it('should import from valid URL', async () => {
+    const result = await importHooksFromUrl('https://example.com/hooks.json')
+    expect(result.success).toBe(true)
+    expect(result.imported).toBeGreaterThan(0)
+  })
+})
+
+describe('duplicateHook', () => {
+  it('should duplicate an existing hook', async () => {
+    const dup = await duplicateHook('hook-1')
+    expect(dup).not.toBeNull()
+    expect(dup!.name).toBe('Sensitive file guard (copy)')
+    expect(dup!.id).not.toBe('hook-1')
+    expect(dup!.status).toBe('disabled')
+    expect(dup!.stats.runCount).toBe(0)
+  })
+
+  it('should return null for unknown hook', async () => {
+    const dup = await duplicateHook('nonexistent')
+    expect(dup).toBeNull()
+  })
+})
+
+describe('deleteHook', () => {
+  it('should delete an existing hook', async () => {
+    // Create a hook to delete
+    const hook = await saveHook({
+      name: 'Hook to delete',
+      config: { trigger: 'Stop' },
+      scriptContent: 'exit 0',
+      scriptLanguage: 'bash',
+      harness: 'claude-code',
+    })
+    const deleted = await deleteHook(hook.id)
+    expect(deleted).toBe(true)
+    const found = await getHook(hook.id)
+    expect(found).toBeNull()
+  })
+
+  it('should return false for unknown hook', async () => {
+    const deleted = await deleteHook('nonexistent')
+    expect(deleted).toBe(false)
+  })
+})
+
+describe('listCommunitySources', () => {
+  it('should return community sources', async () => {
+    const sources = await listCommunitySources()
+    expect(sources.length).toBeGreaterThanOrEqual(4)
+    expect(sources[0]).toHaveProperty('id')
+    expect(sources[0]).toHaveProperty('name')
+    expect(sources[0]).toHaveProperty('author')
+    expect(sources[0]).toHaveProperty('url')
+    expect(sources[0]).toHaveProperty('hookCount')
+    expect(sources[0]).toHaveProperty('stars')
+    expect(sources[0]).toHaveProperty('tags')
   })
 })

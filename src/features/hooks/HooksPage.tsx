@@ -4,15 +4,43 @@
  */
 
 import { useEffect, useCallback, useState } from 'react'
-import { RefreshCw, Webhook, Plus } from 'lucide-react'
+import {
+  RefreshCw,
+  Webhook,
+  Plus,
+  Wand2,
+  Upload,
+  Download,
+  Globe,
+  MoreVertical,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { useHooksStore } from '@/stores/hooks-store'
-import { getHooksGroupedByTrigger, toggleHookStatus } from '@/services/hooks'
+import {
+  getHooksGroupedByTrigger,
+  toggleHookStatus,
+  duplicateHook,
+  deleteHook,
+  exportHooks,
+  exportAllHooks,
+} from '@/services/hooks'
+import type { HookExportData } from '@/services/hooks'
 import { HookGroupSection } from './HookGroupSection'
 import { BulkHookActions } from './BulkHookActions'
 import { HookEditor } from './HookEditor'
 import { HookTemplatesGallery } from './HookTemplatesGallery'
+import { HookImportDialog } from './HookImportDialog'
+import { HookExportDialog } from './HookExportDialog'
+import { CommunityHooksDialog } from './CommunityHooksDialog'
+import { HookCreationWizard } from './HookCreationWizard'
 import type { HookTrigger, HookTemplate } from '@/types'
 
 const TRIGGER_FILTERS: { value: HookTrigger | null; label: string }[] = [
@@ -31,6 +59,11 @@ export function HooksPage() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingHookId, setEditingHookId] = useState<string | null>(null)
   const [editorTemplate, setEditorTemplate] = useState<HookTemplate | null>(null)
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [exportData, setExportData] = useState<HookExportData | null>(null)
+  const [communityOpen, setCommunityOpen] = useState(false)
   const hookGroups = useHooksStore((s) => s.hookGroups)
   const isLoading = useHooksStore((s) => s.isLoading)
   const filterTrigger = useHooksStore((s) => s.filterTrigger)
@@ -74,6 +107,30 @@ export function HooksPage() {
     [setHookGroups]
   )
 
+  const handleDuplicate = useCallback(
+    async (id: string) => {
+      const dup = await duplicateHook(id)
+      if (dup) {
+        setLastMessage(`Duplicated hook as "${dup.name}"`)
+        const groups = await getHooksGroupedByTrigger()
+        setHookGroups(groups)
+      }
+    },
+    [setHookGroups, setLastMessage]
+  )
+
+  const handleDelete = useCallback(
+    async (id: string) => {
+      const ok = await deleteHook(id)
+      if (ok) {
+        setLastMessage('Hook deleted')
+        const groups = await getHooksGroupedByTrigger()
+        setHookGroups(groups)
+      }
+    },
+    [setHookGroups, setLastMessage]
+  )
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -104,13 +161,46 @@ export function HooksPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={loadData}
-            disabled={isLoading}
-            aria-label="Refresh hooks list"
+            onClick={() => setWizardOpen(true)}
+            aria-label="Open creation wizard"
           >
-            <RefreshCw className={cn('mr-2 h-3.5 w-3.5', isLoading && 'animate-spin')} />
-            {isLoading ? 'Loading...' : 'Refresh'}
+            <Wand2 className="mr-2 h-3.5 w-3.5" />
+            Wizard
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" aria-label="More actions">
+                <MoreVertical className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setImportOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import Hooks
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async () => {
+                  const ids = [...selectedIds]
+                  const data = ids.length > 0 ? await exportHooks(ids) : await exportAllHooks()
+                  setExportData(data)
+                  setExportOpen(true)
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export Hooks
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setCommunityOpen(true)}>
+                <Globe className="mr-2 h-4 w-4" />
+                Community Sources
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={loadData} disabled={isLoading}>
+                <RefreshCw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
+                {isLoading ? 'Loading...' : 'Refresh'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -199,6 +289,8 @@ export function HooksPage() {
               setEditorTemplate(null)
               setEditorOpen(true)
             }}
+            onDuplicate={handleDuplicate}
+            onDelete={handleDelete}
           />
         ))}
 
@@ -219,6 +311,30 @@ export function HooksPage() {
           if (!open) setEditorTemplate(null)
         }}
         template={editorTemplate}
+      />
+      {/* Creation wizard */}
+      <HookCreationWizard open={wizardOpen} onOpenChange={setWizardOpen} />
+      {/* Import dialog */}
+      <HookImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImportComplete={loadData}
+      />
+      {/* Export dialog */}
+      <HookExportDialog
+        open={exportOpen}
+        onOpenChange={(o) => {
+          setExportOpen(o)
+          if (!o) setExportData(null)
+        }}
+        exportData={exportData}
+        selectedCount={selectedIds.size}
+      />
+      {/* Community sources dialog */}
+      <CommunityHooksDialog
+        open={communityOpen}
+        onOpenChange={setCommunityOpen}
+        onImportComplete={loadData}
       />
     </div>
   )

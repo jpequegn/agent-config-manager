@@ -984,3 +984,271 @@ export async function getTemplate(id: string): Promise<HookTemplate | null> {
   await new Promise((resolve) => setTimeout(resolve, 50))
   return BUILTIN_TEMPLATES.find((t) => t.id === id) ?? null
 }
+
+// --- Import / Export / Duplicate ---
+
+/** Shareable hook export format */
+export interface HookExportData {
+  version: 1
+  exportedAt: string
+  hooks: HookExportEntry[]
+}
+
+/** Single hook export entry */
+export interface HookExportEntry {
+  name: string
+  description?: string
+  harness: string
+  config: {
+    trigger: string
+    toolMatcher?: string
+    toolMatcherIsRegex?: boolean
+    timeout?: number
+  }
+  scriptContent: string
+  scriptLanguage: string
+}
+
+/** Import result */
+export interface HookImportResult {
+  success: boolean
+  imported: number
+  skipped: number
+  errors: string[]
+}
+
+/** Community source */
+export interface CommunityHookSource {
+  id: string
+  name: string
+  description: string
+  author: string
+  url: string
+  hookCount: number
+  stars: number
+  tags: string[]
+}
+
+/**
+ * Export hooks to shareable JSON format.
+ */
+export async function exportHooks(hookIds: string[]): Promise<HookExportData> {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  const hooks = MOCK_HOOKS.filter((h) => hookIds.includes(h.id))
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    hooks: hooks.map((h) => ({
+      name: h.name,
+      description: h.description,
+      harness: h.harness,
+      config: {
+        trigger: h.config.trigger,
+        toolMatcher: h.config.toolMatcher,
+        toolMatcherIsRegex: h.config.toolMatcherIsRegex,
+        timeout: h.config.timeout,
+      },
+      scriptContent: h.scriptContent ?? '',
+      scriptLanguage: h.scriptLanguage,
+    })),
+  }
+}
+
+/**
+ * Export all hooks.
+ */
+export async function exportAllHooks(): Promise<HookExportData> {
+  const ids = MOCK_HOOKS.map((h) => h.id)
+  return exportHooks(ids)
+}
+
+/**
+ * Import hooks from JSON data.
+ */
+export async function importHooks(data: string): Promise<HookImportResult> {
+  await new Promise((resolve) => setTimeout(resolve, 300))
+
+  const errors: string[] = []
+  let parsed: HookExportData
+
+  try {
+    parsed = JSON.parse(data)
+  } catch {
+    return { success: false, imported: 0, skipped: 0, errors: ['Invalid JSON format'] }
+  }
+
+  if (!parsed.version || !Array.isArray(parsed.hooks)) {
+    return {
+      success: false,
+      imported: 0,
+      skipped: 0,
+      errors: ['Invalid hook export format: missing version or hooks array'],
+    }
+  }
+
+  let imported = 0
+  let skipped = 0
+
+  for (const entry of parsed.hooks) {
+    if (!entry.name || !entry.config?.trigger) {
+      errors.push(`Skipped hook: missing name or trigger`)
+      skipped++
+      continue
+    }
+
+    const lang = (['bash', 'python', 'node'] as const).includes(
+      entry.scriptLanguage as 'bash' | 'python' | 'node'
+    )
+      ? (entry.scriptLanguage as 'bash' | 'python' | 'node')
+      : 'bash'
+
+    const newHook: Hook = {
+      id: generateId('hook'),
+      name: entry.name,
+      harness: (entry.harness as Hook['harness']) || 'claude-code',
+      config: {
+        trigger: entry.config.trigger as HookTrigger,
+        toolMatcher: entry.config.toolMatcher,
+        toolMatcherIsRegex: entry.config.toolMatcherIsRegex,
+        timeout: entry.config.timeout,
+      },
+      scriptPath: `~/.claude/hooks/${entry.name.toLowerCase().replace(/\s+/g, '-')}.${lang === 'python' ? 'py' : lang === 'node' ? 'js' : 'sh'}`,
+      scriptContent: entry.scriptContent,
+      scriptLanguage: lang,
+      status: 'enabled',
+      stats: { runCount: 0, allowCount: 0, blockCount: 0, errorCount: 0 },
+      description: entry.description,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    MOCK_HOOKS.push(newHook)
+    imported++
+  }
+
+  return {
+    success: imported > 0,
+    imported,
+    skipped,
+    errors,
+  }
+}
+
+/**
+ * Import hooks from a URL.
+ */
+export async function importHooksFromUrl(url: string): Promise<HookImportResult> {
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
+  // Simulate fetching from URL
+  if (!url.startsWith('http')) {
+    return { success: false, imported: 0, skipped: 0, errors: ['Invalid URL'] }
+  }
+
+  // Mock: simulate a successful URL import with 2 hooks
+  const mockData: HookExportData = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    hooks: [
+      {
+        name: `Imported from ${new URL(url).hostname}`,
+        description: 'Hook imported from community source',
+        harness: 'claude-code',
+        config: { trigger: 'PreToolUse', timeout: 5000 },
+        scriptContent: '#!/bin/bash\n\n# Imported hook\nexit 0\n',
+        scriptLanguage: 'bash',
+      },
+    ],
+  }
+
+  return importHooks(JSON.stringify(mockData))
+}
+
+/**
+ * Duplicate an existing hook.
+ */
+export async function duplicateHook(hookId: string): Promise<Hook | null> {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  const original = MOCK_HOOKS.find((h) => h.id === hookId)
+  if (!original) return null
+
+  const now = new Date()
+  const duplicate: Hook = {
+    id: generateId('hook'),
+    name: `${original.name} (copy)`,
+    harness: original.harness,
+    config: { ...original.config },
+    scriptPath: original.scriptPath.replace(/\.\w+$/, `-copy$&`),
+    scriptContent: original.scriptContent,
+    scriptLanguage: original.scriptLanguage,
+    status: 'disabled',
+    stats: { runCount: 0, allowCount: 0, blockCount: 0, errorCount: 0 },
+    description: original.description,
+    createdAt: now,
+    updatedAt: now,
+  }
+  MOCK_HOOKS.push(duplicate)
+  return duplicate
+}
+
+/**
+ * Delete a hook.
+ */
+export async function deleteHook(hookId: string): Promise<boolean> {
+  await new Promise((resolve) => setTimeout(resolve, 150))
+  const idx = MOCK_HOOKS.findIndex((h) => h.id === hookId)
+  if (idx === -1) return false
+  MOCK_HOOKS.splice(idx, 1)
+  return true
+}
+
+/**
+ * List community hook sources.
+ */
+export async function listCommunitySources(): Promise<CommunityHookSource[]> {
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  return [
+    {
+      id: 'cs-1',
+      name: 'Claude Code Security Pack',
+      description:
+        'Battle-tested security hooks for Claude Code. Includes secret scanning, path validation, and command blocking.',
+      author: 'anthropic-community',
+      url: 'https://github.com/anthropic-community/claude-hooks-security',
+      hookCount: 8,
+      stars: 342,
+      tags: ['security', 'claude-code'],
+    },
+    {
+      id: 'cs-2',
+      name: 'DevOps Hook Collection',
+      description:
+        'CI/CD integration hooks: Slack notifications, deployment checks, commit message validation.',
+      author: 'devops-hooks',
+      url: 'https://github.com/devops-hooks/agent-hooks',
+      hookCount: 12,
+      stars: 187,
+      tags: ['devops', 'notifications', 'ci-cd'],
+    },
+    {
+      id: 'cs-3',
+      name: 'Multi-Agent Logging Suite',
+      description: 'Comprehensive logging hooks compatible with Claude Code, Cursor, and Copilot.',
+      author: 'agent-tools',
+      url: 'https://github.com/agent-tools/logging-hooks',
+      hookCount: 6,
+      stars: 94,
+      tags: ['logging', 'multi-harness'],
+    },
+    {
+      id: 'cs-4',
+      name: 'Cursor Safety Hooks',
+      description:
+        'Safety-focused hooks for Cursor: file protection, dependency scanning, and test enforcement.',
+      author: 'cursor-community',
+      url: 'https://github.com/cursor-community/safety-hooks',
+      hookCount: 5,
+      stars: 156,
+      tags: ['security', 'cursor'],
+    },
+  ]
+}
