@@ -38,3 +38,6 @@ export * from './external-context'
 
 // Hooks service
 export * from './hooks'
+
+// Unified search service
+export * from './search'

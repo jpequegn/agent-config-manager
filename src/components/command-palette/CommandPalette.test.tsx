@@ -31,6 +31,14 @@ vi.mock('@/components/harness', () => ({
   getAllHarnessTypes: vi.fn(() => ['claude-code', 'cursor', 'copilot']),
 }))
 
+// Mock search service
+vi.mock('@/services/search', () => ({
+  searchAll: vi.fn(() => Promise.resolve([])),
+  addRecentSearch: vi.fn(),
+  getRecentSearches: vi.fn(() => []),
+  clearRecentSearches: vi.fn(),
+}))
+
 describe('CommandPalette', () => {
   const mockOpenCommandPalette = vi.fn()
   const mockCloseCommandPalette = vi.fn()
@@ -52,6 +60,7 @@ describe('CommandPalette', () => {
     vi.mocked(useHarnessStore).mockImplementation((selector) => {
       const state = {
         setActiveHarness: mockSetActiveHarness,
+        activeHarness: 'claude-code',
       }
       return selector(state as unknown as ReturnType<typeof useHarnessStore.getState>)
     })
@@ -63,13 +72,11 @@ describe('CommandPalette', () => {
 
   describe('keyboard shortcut', () => {
     it('opens command palette on Cmd+K', async () => {
-      // Mock palette as closed
       const { useCommandPaletteOpen } = await import('@/stores')
       vi.mocked(useCommandPaletteOpen).mockReturnValue(false)
 
       render(<CommandPalette />)
 
-      // Simulate Cmd+K
       fireEvent.keyDown(document, { key: 'k', metaKey: true })
 
       expect(mockOpenCommandPalette).toHaveBeenCalled()
@@ -81,7 +88,6 @@ describe('CommandPalette', () => {
 
       render(<CommandPalette />)
 
-      // Simulate Ctrl+K
       fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
 
       expect(mockOpenCommandPalette).toHaveBeenCalled()
@@ -93,7 +99,6 @@ describe('CommandPalette', () => {
 
       render(<CommandPalette />)
 
-      // Simulate Cmd+K when open
       fireEvent.keyDown(document, { key: 'k', metaKey: true })
 
       expect(mockCloseCommandPalette).toHaveBeenCalled()
@@ -105,7 +110,6 @@ describe('CommandPalette', () => {
 
       render(<CommandPalette />)
 
-      // Just 'k' without modifier
       fireEvent.keyDown(document, { key: 'k' })
 
       expect(mockOpenCommandPalette).not.toHaveBeenCalled()
@@ -131,25 +135,66 @@ describe('CommandPalette', () => {
 
       render(<CommandPalette />)
 
-      expect(screen.getByPlaceholderText('Type a command or search...')).toBeInTheDocument()
+      expect(
+        screen.getByPlaceholderText('Search everything or type > for commands...')
+      ).toBeInTheDocument()
     })
 
-    it('renders all command groups', async () => {
+    it('renders search scope toggle', async () => {
       const { useCommandPaletteOpen } = await import('@/stores')
       vi.mocked(useCommandPaletteOpen).mockReturnValue(true)
 
       render(<CommandPalette />)
+
+      expect(screen.getByText('Search in:')).toBeInTheDocument()
+      expect(screen.getByText('All')).toBeInTheDocument()
+      expect(screen.getByText('Current Harness')).toBeInTheDocument()
+    })
+
+    it('renders quick actions when no search', async () => {
+      const { useCommandPaletteOpen } = await import('@/stores')
+      vi.mocked(useCommandPaletteOpen).mockReturnValue(true)
+
+      render(<CommandPalette />)
+
+      expect(screen.getByText('Quick Actions')).toBeInTheDocument()
+      expect(screen.getByText('Create New Skill')).toBeInTheDocument()
+      expect(screen.getByText('Create New Hook')).toBeInTheDocument()
+    })
+
+    it('renders keyboard shortcuts hint', async () => {
+      const { useCommandPaletteOpen } = await import('@/stores')
+      vi.mocked(useCommandPaletteOpen).mockReturnValue(true)
+
+      render(<CommandPalette />)
+
+      expect(screen.getByText('for commands')).toBeInTheDocument()
+    })
+  })
+
+  describe('command mode', () => {
+    it('shows commands when > prefix is typed', async () => {
+      const { useCommandPaletteOpen } = await import('@/stores')
+      vi.mocked(useCommandPaletteOpen).mockReturnValue(true)
+
+      render(<CommandPalette />)
+
+      const input = screen.getByPlaceholderText('Search everything or type > for commands...')
+      fireEvent.change(input, { target: { value: '>' } })
 
       expect(screen.getByText('Navigation')).toBeInTheDocument()
       expect(screen.getByText('Switch Harness')).toBeInTheDocument()
       expect(screen.getByText('Actions')).toBeInTheDocument()
     })
 
-    it('renders navigation commands', async () => {
+    it('renders navigation commands in command mode', async () => {
       const { useCommandPaletteOpen } = await import('@/stores')
       vi.mocked(useCommandPaletteOpen).mockReturnValue(true)
 
       render(<CommandPalette />)
+
+      const input = screen.getByPlaceholderText('Search everything or type > for commands...')
+      fireEvent.change(input, { target: { value: '>' } })
 
       expect(screen.getByText('Go to Skills')).toBeInTheDocument()
       expect(screen.getByText('Go to Hooks')).toBeInTheDocument()
@@ -159,34 +204,41 @@ describe('CommandPalette', () => {
       expect(screen.getByText('Go to Settings')).toBeInTheDocument()
     })
 
-    it('renders harness commands', async () => {
+    it('renders harness commands in command mode', async () => {
       const { useCommandPaletteOpen } = await import('@/stores')
       vi.mocked(useCommandPaletteOpen).mockReturnValue(true)
 
       render(<CommandPalette />)
+
+      const input = screen.getByPlaceholderText('Search everything or type > for commands...')
+      fireEvent.change(input, { target: { value: '>' } })
 
       expect(screen.getByText('Switch to Claude-code')).toBeInTheDocument()
       expect(screen.getByText('Switch to Cursor')).toBeInTheDocument()
       expect(screen.getByText('Switch to Copilot')).toBeInTheDocument()
     })
 
-    it('renders action commands', async () => {
+    it('renders action commands in command mode', async () => {
       const { useCommandPaletteOpen } = await import('@/stores')
       vi.mocked(useCommandPaletteOpen).mockReturnValue(true)
 
       render(<CommandPalette />)
 
-      expect(screen.getByText('Create New Skill')).toBeInTheDocument()
-      expect(screen.getByText('Create New Hook')).toBeInTheDocument()
+      const input = screen.getByPlaceholderText('Search everything or type > for commands...')
+      fireEvent.change(input, { target: { value: '>' } })
+
       expect(screen.getByText('Refresh All')).toBeInTheDocument()
       expect(screen.getByText('Open Documentation')).toBeInTheDocument()
     })
 
-    it('renders keyboard shortcuts', async () => {
+    it('renders keyboard shortcuts in command mode', async () => {
       const { useCommandPaletteOpen } = await import('@/stores')
       vi.mocked(useCommandPaletteOpen).mockReturnValue(true)
 
       render(<CommandPalette />)
+
+      const input = screen.getByPlaceholderText('Search everything or type > for commands...')
+      fireEvent.change(input, { target: { value: '>' } })
 
       expect(screen.getByText('⌘1')).toBeInTheDocument()
       expect(screen.getByText('⌘,')).toBeInTheDocument()
@@ -200,6 +252,9 @@ describe('CommandPalette', () => {
       vi.mocked(useCommandPaletteOpen).mockReturnValue(true)
 
       render(<CommandPalette />)
+
+      const input = screen.getByPlaceholderText('Search everything or type > for commands...')
+      fireEvent.change(input, { target: { value: '>' } })
 
       const cursorCommand = screen.getByText('Switch to Cursor')
       fireEvent.click(cursorCommand)
@@ -216,6 +271,9 @@ describe('CommandPalette', () => {
 
       render(<CommandPalette />)
 
+      const input = screen.getByPlaceholderText('Search everything or type > for commands...')
+      fireEvent.change(input, { target: { value: '>' } })
+
       const skillsCommand = screen.getByText('Go to Skills')
       fireEvent.click(skillsCommand)
 
@@ -231,7 +289,6 @@ describe('CommandPalette', () => {
 
       render(<CommandPalette />)
 
-      // Get the dialog content and press Escape
       const dialogContent = screen.getByRole('dialog')
       fireEvent.keyDown(dialogContent, { key: 'Escape' })
 
