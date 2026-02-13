@@ -11,6 +11,7 @@ import {
   HardDrive,
   Webhook,
   Activity,
+  ArrowLeftRight,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,7 @@ import { SkillsPage } from '@/features/skills'
 import { ToolsPage } from '@/features/tools'
 import { SettingsPage } from '@/features/settings'
 import { HooksPage, HookTestingPage } from '@/features/hooks'
+import { MigrationWizardPage } from '@/features/migration'
 import { cn } from '@/lib/utils'
 
 type AppTab =
@@ -39,6 +41,7 @@ type AppTab =
   | 'hook-testing'
   | 'skills'
   | 'tools'
+  | 'migration'
   | 'settings'
 
 const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -52,6 +55,7 @@ const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?:
   { id: 'hook-testing', label: 'Hook Logs', icon: Activity },
   { id: 'skills', label: 'Skills', icon: Zap },
   { id: 'tools', label: 'Tools', icon: Wrench },
+  { id: 'migration', label: 'Migration', icon: ArrowLeftRight },
   { id: 'settings', label: 'Settings', icon: Settings2 },
 ]
 
@@ -200,6 +204,14 @@ function App() {
         hidden={activeTab !== 'tools'}
       >
         {activeTab === 'tools' && <ToolsPage />}
+      </div>
+      <div
+        id="panel-migration"
+        role="tabpanel"
+        aria-labelledby="migration-tab"
+        hidden={activeTab !== 'migration'}
+      >
+        {activeTab === 'migration' && <MigrationWizardPage />}
       </div>
       <div
         id="panel-settings"

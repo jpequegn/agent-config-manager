@@ -146,3 +146,13 @@ export {
   useLastTestResult,
   useIsHookTesting,
 } from './hook-logs-store'
+
+// Migration store
+export {
+  useMigrationStore,
+  useMigrationStep,
+  useMigrationPlan,
+  useMigrationResult,
+  useIsAnalyzing,
+  useIsExecuting,
+} from './migration-store'
