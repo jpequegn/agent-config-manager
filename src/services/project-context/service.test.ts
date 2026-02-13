@@ -3,7 +3,17 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { scanProjects, getProjectContext, getContextFileContent, getProjectStats } from './service'
+import {
+  scanProjects,
+  getProjectContext,
+  getContextFileContent,
+  getProjectStats,
+  getContextTemplates,
+  getTemplatesForHarness,
+  validateContextFile,
+  saveContextFile,
+  createContextFile,
+} from './service'
 
 describe('ProjectContextService', () => {
   describe('scanProjects', () => {
@@ -81,6 +91,150 @@ describe('ProjectContextService', () => {
       const stats = await getProjectStats()
       const harnessTotal = stats.byHarness.reduce((sum, h) => sum + h.count, 0)
       expect(harnessTotal).toBe(stats.totalContextFiles)
+    })
+  })
+
+  describe('getContextTemplates', () => {
+    it('should return a list of templates', () => {
+      const templates = getContextTemplates()
+      expect(templates.length).toBeGreaterThan(0)
+    })
+
+    it('should include templates for multiple harnesses', () => {
+      const templates = getContextTemplates()
+      const harnesses = new Set(templates.map((t) => t.harness))
+      expect(harnesses.size).toBeGreaterThan(1)
+    })
+
+    it('should include required fields for each template', () => {
+      const templates = getContextTemplates()
+      for (const template of templates) {
+        expect(template.id).toBeTruthy()
+        expect(template.name).toBeTruthy()
+        expect(template.description).toBeTruthy()
+        expect(template.fileName).toBeTruthy()
+        expect(template.content).toBeTruthy()
+      }
+    })
+  })
+
+  describe('getTemplatesForHarness', () => {
+    it('should filter templates by harness', () => {
+      const cursorTemplates = getTemplatesForHarness('cursor')
+      expect(cursorTemplates.length).toBeGreaterThan(0)
+      for (const template of cursorTemplates) {
+        expect(template.harness).toBe('cursor')
+      }
+    })
+
+    it('should return empty for harness with no templates', () => {
+      const clineTemplates = getTemplatesForHarness('cline')
+      expect(clineTemplates).toEqual([])
+    })
+  })
+
+  describe('validateContextFile', () => {
+    it('should pass valid markdown content', () => {
+      const result = validateContextFile('# Heading\n\nContent here', 'claude-md', 'CLAUDE.md')
+      expect(result.valid).toBe(true)
+      expect(result.errors).toEqual([])
+    })
+
+    it('should fail empty content', () => {
+      const result = validateContextFile('', 'claude-md', 'CLAUDE.md')
+      expect(result.valid).toBe(false)
+      expect(result.errors[0].message).toContain('empty')
+    })
+
+    it('should warn on markdown without heading', () => {
+      const result = validateContextFile('Just some text', 'claude-md', 'CLAUDE.md')
+      expect(result.valid).toBe(true) // warnings don't invalidate
+      expect(
+        result.errors.some((e) => e.severity === 'warning' && e.message.includes('heading'))
+      ).toBe(true)
+    })
+
+    it('should fail invalid JSON', () => {
+      const result = validateContextFile('{ invalid json }', 'other', '.continuerc.json')
+      expect(result.valid).toBe(false)
+      expect(result.errors[0].message).toContain('JSON syntax error')
+    })
+
+    it('should pass valid JSON', () => {
+      const result = validateContextFile('{"key": "value"}', 'other', '.continuerc.json')
+      expect(result.valid).toBe(true)
+    })
+
+    it('should fail YAML with tabs', () => {
+      const result = validateContextFile('\tkey: value', 'other', '.aider.conf.yml')
+      expect(result.valid).toBe(false)
+      expect(result.errors[0].message).toContain('spaces')
+    })
+
+    it('should pass valid YAML', () => {
+      const result = validateContextFile('key: value\nother: 42', 'other', '.aider.conf.yml')
+      expect(result.valid).toBe(true)
+    })
+
+    it('should warn on very large files', () => {
+      const largeContent = '# Heading\n' + 'x'.repeat(60000)
+      const result = validateContextFile(largeContent, 'claude-md', 'CLAUDE.md')
+      expect(
+        result.errors.some((e) => e.severity === 'warning' && e.message.includes('large'))
+      ).toBe(true)
+    })
+  })
+
+  describe('saveContextFile', () => {
+    it('should save content to existing file', async () => {
+      const result = await saveContextFile(
+        '~/Code/agent-config-manager/CLAUDE.md',
+        '# Updated Content'
+      )
+      expect(result.success).toBe(true)
+
+      // Verify content was updated
+      const content = await getContextFileContent('~/Code/agent-config-manager/CLAUDE.md')
+      expect(content).toBe('# Updated Content')
+    })
+  })
+
+  describe('createContextFile', () => {
+    it('should create a new file in a project', async () => {
+      const result = await createContextFile(
+        '~/Code/data-pipeline',
+        '.cursorrules',
+        'Python project rules',
+        'cursorrules',
+        'cursor'
+      )
+      expect(result.success).toBe(true)
+      expect(result.file).toBeDefined()
+      expect(result.file!.fileName).toBe('.cursorrules')
+    })
+
+    it('should fail for unknown project', async () => {
+      const result = await createContextFile(
+        '/nonexistent',
+        'CLAUDE.md',
+        '# Content',
+        'claude-md',
+        'claude-code'
+      )
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('not found')
+    })
+
+    it('should fail if file already exists', async () => {
+      const result = await createContextFile(
+        '~/Code/agent-config-manager',
+        'CLAUDE.md',
+        '# Content',
+        'claude-md',
+        'claude-code'
+      )
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('already exists')
     })
   })
 })

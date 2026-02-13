@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@/test/utils'
+import { userEvent } from '@testing-library/user-event'
 import { ProjectContextPage } from './ProjectContextPage'
 import { useProjectContextStore } from '@/stores'
 
@@ -47,5 +48,79 @@ describe('ProjectContextPage', () => {
   it('should show search input', () => {
     render(<ProjectContextPage />)
     expect(screen.getByPlaceholderText('Search projects...')).toBeInTheDocument()
+  })
+
+  it('should show New Context File button when project is selected', async () => {
+    render(<ProjectContextPage />)
+    const user = userEvent.setup()
+
+    await waitFor(() => {
+      expect(screen.getByText('agent-config-manager')).toBeInTheDocument()
+    })
+
+    // Select a project
+    await user.click(screen.getByText('agent-config-manager'))
+
+    await waitFor(() => {
+      expect(screen.getByText('New Context File')).toBeInTheDocument()
+    })
+  })
+
+  it('should show edit buttons on context files', async () => {
+    render(<ProjectContextPage />)
+    const user = userEvent.setup()
+
+    await waitFor(() => {
+      expect(screen.getByText('agent-config-manager')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('agent-config-manager'))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Edit CLAUDE.md')).toBeInTheDocument()
+    })
+  })
+
+  it('should open editor when Edit is clicked', async () => {
+    render(<ProjectContextPage />)
+    const user = userEvent.setup()
+
+    await waitFor(() => {
+      expect(screen.getByText('agent-config-manager')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('agent-config-manager'))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Edit CLAUDE.md')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByLabelText('Edit CLAUDE.md'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit CLAUDE.md')).toBeInTheDocument()
+      expect(screen.getByLabelText('File content editor')).toBeInTheDocument()
+    })
+  })
+
+  it('should open create dialog when New Context File is clicked', async () => {
+    render(<ProjectContextPage />)
+    const user = userEvent.setup()
+
+    await waitFor(() => {
+      expect(screen.getByText('agent-config-manager')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('agent-config-manager'))
+
+    await waitFor(() => {
+      expect(screen.getByText('New Context File')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('New Context File'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Context File')).toBeInTheDocument()
+    })
   })
 })

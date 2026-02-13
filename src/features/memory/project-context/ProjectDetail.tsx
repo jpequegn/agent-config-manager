@@ -3,12 +3,12 @@
  * Shows context files and stats for the selected project
  */
 
-import { FileText, FolderOpen, Eye } from 'lucide-react'
+import { FileText, FolderOpen, Eye, Pencil } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cn, formatBytes, formatRelativeTime } from '@/lib/utils'
 import { useProjectContextStore, useSelectedProject } from '@/stores'
-import type { HarnessType } from '@/types'
+import type { HarnessType, ProjectContextFile } from '@/types'
 
 /** Harness badge colors */
 const HARNESS_COLORS: Record<HarnessType, string> = {
@@ -29,7 +29,11 @@ const HARNESS_LABELS: Record<HarnessType, string> = {
   aider: 'Aider',
 }
 
-export function ProjectDetail() {
+interface ProjectDetailProps {
+  onEditFile?: (file: ProjectContextFile) => void
+}
+
+export function ProjectDetail({ onEditFile }: ProjectDetailProps = {}) {
   const selectedProject = useSelectedProject()
   const selectFile = useProjectContextStore((s) => s.selectFile)
 
@@ -67,15 +71,29 @@ export function ProjectDetail() {
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   {file.fileName}
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 gap-1.5 text-xs"
-                  onClick={() => selectFile(file)}
-                >
-                  <Eye className="h-3 w-3" />
-                  View
-                </Button>
+                <div className="flex gap-1">
+                  {onEditFile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs"
+                      onClick={() => onEditFile(file)}
+                      aria-label={`Edit ${file.fileName}`}
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs"
+                    onClick={() => selectFile(file)}
+                  >
+                    <Eye className="h-3 w-3" />
+                    View
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">

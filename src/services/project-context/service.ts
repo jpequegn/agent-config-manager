@@ -283,5 +283,333 @@ export async function getProjectStats(): Promise<ProjectContextStats> {
   }
 }
 
+/** Validation error for context files */
+export interface ContextFileValidationError {
+  line?: number
+  message: string
+  severity: 'error' | 'warning'
+}
+
+/** Validation result */
+export interface ContextFileValidationResult {
+  valid: boolean
+  errors: ContextFileValidationError[]
+}
+
+/** Context file template */
+export interface ContextFileTemplate {
+  id: string
+  name: string
+  description: string
+  fileType: ProjectContextFile['type']
+  harness: HarnessType
+  fileName: string
+  content: string
+}
+
+/** Built-in templates */
+const CONTEXT_TEMPLATES: ContextFileTemplate[] = [
+  {
+    id: 'claude-md-basic',
+    name: 'CLAUDE.md - Basic',
+    description: 'Basic project context for Claude Code',
+    fileType: 'claude-md',
+    harness: 'claude-code',
+    fileName: 'CLAUDE.md',
+    content: `# Project Name
+
+## Overview
+Brief description of what this project does.
+
+## Tech Stack
+- Language/framework
+- Key dependencies
+
+## Architecture
+- \`src/\` - Source code
+- \`tests/\` - Test files
+
+## Conventions
+- Follow existing patterns
+- Use TypeScript strict mode
+`,
+  },
+  {
+    id: 'claude-md-detailed',
+    name: 'CLAUDE.md - Detailed',
+    description: 'Comprehensive context with architecture and guidelines',
+    fileType: 'claude-md',
+    harness: 'claude-code',
+    fileName: 'CLAUDE.md',
+    content: `# Project Name
+
+## Overview
+Brief description of what this project does and its purpose.
+
+## Tech Stack
+- **Language:** TypeScript
+- **Framework:** React
+- **Build Tool:** Vite
+- **Styling:** Tailwind CSS
+
+## Architecture
+- \`src/components/\` - React UI components
+- \`src/features/\` - Feature modules
+- \`src/services/\` - Business logic and API calls
+- \`src/stores/\` - State management
+- \`src/types/\` - TypeScript type definitions
+- \`src/lib/\` - Shared utilities
+
+## Conventions
+- Use TypeScript strict mode
+- Prefer functional components with hooks
+- Follow existing patterns in the codebase
+- Write tests for new features
+
+## Common Tasks
+- \`npm run dev\` - Start development server
+- \`npm run build\` - Build for production
+- \`npm run test\` - Run tests
+`,
+  },
+  {
+    id: 'cursorrules-basic',
+    name: '.cursorrules - Basic',
+    description: 'Basic rules for Cursor AI assistant',
+    fileType: 'cursorrules',
+    harness: 'cursor',
+    fileName: '.cursorrules',
+    content: `You are an expert developer working on this project.
+Follow the existing patterns in the codebase.
+Use TypeScript for all new files.
+Prefer functional components with hooks.
+Write clean, readable code with meaningful variable names.
+`,
+  },
+  {
+    id: 'cursorrules-detailed',
+    name: '.cursorrules - Detailed',
+    description: 'Comprehensive rules with tech stack and style preferences',
+    fileType: 'cursorrules',
+    harness: 'cursor',
+    fileName: '.cursorrules',
+    content: `You are an expert TypeScript and React developer.
+
+## Tech Stack
+- React with TypeScript
+- Tailwind CSS for styling
+- Zustand for state management
+- Vitest for testing
+
+## Code Style
+- Use functional components with hooks
+- Prefer named exports over default exports
+- Use descriptive variable and function names
+- Keep components focused and small
+
+## Patterns
+- Follow existing patterns in the codebase
+- Use custom hooks for reusable logic
+- Prefer composition over inheritance
+- Handle errors gracefully
+`,
+  },
+  {
+    id: 'copilot-instructions',
+    name: 'Copilot Instructions',
+    description: 'Instructions for GitHub Copilot',
+    fileType: 'copilot-instructions',
+    harness: 'copilot',
+    fileName: '.github/copilot-instructions.md',
+    content: `Use TypeScript for all new code.
+Follow the existing project structure.
+Prefer functional components with hooks.
+Use Tailwind CSS for styling.
+Write comprehensive tests for new features.
+`,
+  },
+  {
+    id: 'aider-config',
+    name: 'Aider Config',
+    description: 'Configuration for Aider AI assistant',
+    fileType: 'other',
+    harness: 'aider',
+    fileName: '.aider.conf.yml',
+    content: `model: claude-sonnet-4-20250514
+edit-format: diff
+auto-commits: true
+auto-lint: true
+`,
+  },
+  {
+    id: 'continue-config',
+    name: 'Continue Config',
+    description: 'Configuration for Continue AI assistant',
+    fileType: 'other',
+    harness: 'continue',
+    fileName: '.continuerc.json',
+    content: `{
+  "models": [
+    {
+      "title": "Claude Sonnet",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514"
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "Codestral",
+    "provider": "mistral"
+  }
+}`,
+  },
+]
+
+/**
+ * Get available templates for context files.
+ */
+export function getContextTemplates(): ContextFileTemplate[] {
+  return CONTEXT_TEMPLATES
+}
+
+/**
+ * Get templates filtered by harness type.
+ */
+export function getTemplatesForHarness(harness: HarnessType): ContextFileTemplate[] {
+  return CONTEXT_TEMPLATES.filter((t) => t.harness === harness)
+}
+
+/**
+ * Validate context file content based on its type.
+ */
+export function validateContextFile(
+  content: string,
+  _fileType: ProjectContextFile['type'],
+  fileName: string
+): ContextFileValidationResult {
+  const errors: ContextFileValidationError[] = []
+
+  // Empty content check
+  if (!content.trim()) {
+    errors.push({ message: 'File content cannot be empty', severity: 'error' })
+    return { valid: false, errors }
+  }
+
+  // JSON validation for .continuerc.json and similar
+  if (fileName.endsWith('.json')) {
+    try {
+      JSON.parse(content)
+    } catch (e) {
+      const msg = e instanceof SyntaxError ? e.message : 'Invalid JSON'
+      errors.push({ message: `JSON syntax error: ${msg}`, severity: 'error' })
+    }
+  }
+
+  // YAML basic validation for .aider.conf.yml and similar
+  if (fileName.endsWith('.yml') || fileName.endsWith('.yaml')) {
+    const lines = content.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      // Check for tabs (YAML uses spaces)
+      if (line.startsWith('\t')) {
+        errors.push({
+          line: i + 1,
+          message: 'YAML files should use spaces, not tabs',
+          severity: 'error',
+        })
+      }
+    }
+  }
+
+  // Markdown validation for .md files
+  if (fileName.endsWith('.md')) {
+    // Warn if no heading found
+    if (!content.match(/^#\s+/m)) {
+      errors.push({
+        message: 'Markdown file should start with a heading (# Title)',
+        severity: 'warning',
+      })
+    }
+  }
+
+  // Size check
+  if (content.length > 50000) {
+    errors.push({
+      message: `File is very large (${Math.round(content.length / 1024)}KB). Consider splitting into smaller files.`,
+      severity: 'warning',
+    })
+  }
+
+  return {
+    valid: errors.filter((e) => e.severity === 'error').length === 0,
+    errors,
+  }
+}
+
+/**
+ * Save context file content. In development, updates mock data in memory.
+ */
+export async function saveContextFile(
+  filePath: string,
+  content: string
+): Promise<{ success: boolean; error?: string }> {
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  // Update mock content
+  MOCK_FILE_CONTENT[filePath] = content
+
+  // Update file size in mock projects
+  const newSize = new TextEncoder().encode(content).length
+  for (const project of MOCK_PROJECTS) {
+    for (const file of project.contextFiles) {
+      if (file.filePath === filePath) {
+        file.size = newSize
+        file.lastModified = new Date()
+        project.lastModified = new Date()
+      }
+    }
+  }
+
+  return { success: true }
+}
+
+/**
+ * Create a new context file in a project. In development, adds to mock data.
+ */
+export async function createContextFile(
+  projectPath: string,
+  fileName: string,
+  content: string,
+  fileType: ProjectContextFile['type'],
+  harness: HarnessType
+): Promise<{ success: boolean; error?: string; file?: ProjectContextFile }> {
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const project = MOCK_PROJECTS.find((p) => p.projectPath === projectPath)
+  if (!project) {
+    return { success: false, error: 'Project not found' }
+  }
+
+  // Check if file already exists
+  if (project.contextFiles.some((f) => f.fileName === fileName)) {
+    return { success: false, error: `File ${fileName} already exists in this project` }
+  }
+
+  const filePath = `${projectPath}/${fileName}`
+  const newFile: ProjectContextFile = {
+    type: fileType,
+    fileName,
+    filePath,
+    size: new TextEncoder().encode(content).length,
+    harness,
+    lastModified: new Date(),
+  }
+
+  project.contextFiles.push(newFile)
+  project.lastModified = new Date()
+  MOCK_FILE_CONTENT[filePath] = content
+
+  return { success: true, file: newFile }
+}
+
 /** Export the known context file patterns for use in detection */
 export { CONTEXT_FILE_PATTERNS }
