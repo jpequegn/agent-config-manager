@@ -1,6 +1,6 @@
 /**
  * Project Context Service
- * Exports project scanning and context file management
+ * Exports project scanning, context file management, editing, and templates
  */
 
 export {
@@ -8,6 +8,16 @@ export {
   getProjectContext,
   getContextFileContent,
   getProjectStats,
+  getContextTemplates,
+  getTemplatesForHarness,
+  validateContextFile,
+  saveContextFile,
+  createContextFile,
   CONTEXT_FILE_PATTERNS,
 } from './service'
-export type { ProjectContextStats } from './service'
+export type {
+  ProjectContextStats,
+  ContextFileValidationError,
+  ContextFileValidationResult,
+  ContextFileTemplate,
+} from './service'
