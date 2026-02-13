@@ -12,6 +12,7 @@ import {
   Webhook,
   Activity,
   ArrowLeftRight,
+  Archive,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
@@ -28,6 +29,7 @@ import { ToolsPage } from '@/features/tools'
 import { SettingsPage } from '@/features/settings'
 import { HooksPage, HookTestingPage } from '@/features/hooks'
 import { MigrationWizardPage } from '@/features/migration'
+import { SyncBackupPage } from '@/features/sync-backup'
 import { cn } from '@/lib/utils'
 
 type AppTab =
@@ -42,6 +44,7 @@ type AppTab =
   | 'skills'
   | 'tools'
   | 'migration'
+  | 'sync-backup'
   | 'settings'
 
 const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -56,6 +59,7 @@ const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?:
   { id: 'skills', label: 'Skills', icon: Zap },
   { id: 'tools', label: 'Tools', icon: Wrench },
   { id: 'migration', label: 'Migration', icon: ArrowLeftRight },
+  { id: 'sync-backup', label: 'Sync & Backup', icon: Archive },
   { id: 'settings', label: 'Settings', icon: Settings2 },
 ]
 
@@ -212,6 +216,14 @@ function App() {
         hidden={activeTab !== 'migration'}
       >
         {activeTab === 'migration' && <MigrationWizardPage />}
+      </div>
+      <div
+        id="panel-sync-backup"
+        role="tabpanel"
+        aria-labelledby="sync-backup-tab"
+        hidden={activeTab !== 'sync-backup'}
+      >
+        {activeTab === 'sync-backup' && <SyncBackupPage />}
       </div>
       <div
         id="panel-settings"
