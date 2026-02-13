@@ -13,6 +13,7 @@ import {
   Activity,
   ArrowLeftRight,
   Archive,
+  Bell,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
@@ -30,6 +31,8 @@ import { SettingsPage } from '@/features/settings'
 import { HooksPage, HookTestingPage } from '@/features/hooks'
 import { MigrationWizardPage } from '@/features/migration'
 import { SyncBackupPage } from '@/features/sync-backup'
+import { NotificationsPage } from '@/features/notifications'
+import { ToastContainer } from '@/components/notifications'
 import { cn } from '@/lib/utils'
 
 type AppTab =
@@ -45,6 +48,7 @@ type AppTab =
   | 'tools'
   | 'migration'
   | 'sync-backup'
+  | 'notifications'
   | 'settings'
 
 const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -60,6 +64,7 @@ const TABS: { id: AppTab; label: string; icon: React.ComponentType<{ className?:
   { id: 'tools', label: 'Tools', icon: Wrench },
   { id: 'migration', label: 'Migration', icon: ArrowLeftRight },
   { id: 'sync-backup', label: 'Sync & Backup', icon: Archive },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'settings', label: 'Settings', icon: Settings2 },
 ]
 
@@ -226,6 +231,14 @@ function App() {
         {activeTab === 'sync-backup' && <SyncBackupPage />}
       </div>
       <div
+        id="panel-notifications"
+        role="tabpanel"
+        aria-labelledby="notifications-tab"
+        hidden={activeTab !== 'notifications'}
+      >
+        {activeTab === 'notifications' && <NotificationsPage />}
+      </div>
+      <div
         id="panel-settings"
         role="tabpanel"
         aria-labelledby="settings-tab"
@@ -233,6 +246,7 @@ function App() {
       >
         {activeTab === 'settings' && <SettingsPage />}
       </div>
+      <ToastContainer />
     </AppShell>
   )
 }

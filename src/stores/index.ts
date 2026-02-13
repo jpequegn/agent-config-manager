@@ -166,3 +166,12 @@ export {
   useIsLoadingBackups,
   useIsSyncing,
 } from './sync-backup-store'
+
+// Notifications store
+export {
+  useNotificationsStore,
+  useNotifications,
+  useUnreadCount,
+  useNotificationStats,
+  useIsNotificationsLoading,
+} from './notifications-store'
