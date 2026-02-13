@@ -44,3 +44,30 @@ export * from './search'
 
 // Migration service
 export * from './migration'
+
+// Sync & backup service
+export type {
+  BackupType,
+  BackupStatus,
+  BackupContents,
+  Backup,
+  HarnessSyncState,
+  RotationConfig,
+  RestoreResult,
+  BackupStats,
+} from './sync-backup'
+export {
+  listBackups,
+  getBackup,
+  deleteBackup,
+  restoreBackup,
+  getSyncStates,
+  syncHarness,
+  syncAll,
+  getBackupStats,
+  getRotationConfig,
+  updateRotationConfig,
+  runRotation,
+} from './sync-backup'
+// Note: createBackup and SyncStatus not re-exported here to avoid conflicts
+// Import directly from '@/services/sync-backup' when needed

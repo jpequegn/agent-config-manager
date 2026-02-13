@@ -156,3 +156,13 @@ export {
   useIsAnalyzing,
   useIsExecuting,
 } from './migration-store'
+
+// Sync backup store
+export {
+  useSyncBackupStore,
+  useBackups,
+  useSelectedBackupId,
+  useSyncStates,
+  useIsLoadingBackups,
+  useIsSyncing,
+} from './sync-backup-store'
