@@ -3,7 +3,13 @@
  * Manages settings browsing with mock data organized by category
  */
 
-import type { SettingCategory, SettingDefinition, Setting, SettingValue } from '@/types'
+import type {
+  SettingCategory,
+  SettingDefinition,
+  Setting,
+  SettingValue,
+  SettingValueType,
+} from '@/types'
 
 /** Settings aggregate statistics */
 export interface SettingsListStats {
@@ -434,4 +440,171 @@ export async function getSettingsStats(): Promise<SettingsListStats> {
       count,
     })),
   }
+}
+
+/** Pending change for a setting */
+export interface PendingChange {
+  key: string
+  name: string
+  oldValue: SettingValue
+  newValue: SettingValue
+  type: SettingValueType
+}
+
+/** Validation result for a single setting */
+export interface SettingValidationError {
+  key: string
+  message: string
+}
+
+/** In-memory pending changes store */
+const pendingChanges = new Map<string, SettingValue>()
+
+/**
+ * Validate a setting value against its definition.
+ */
+export function validateSettingValue(
+  key: string,
+  value: SettingValue
+): SettingValidationError | null {
+  const def = MOCK_DEFINITIONS.find((d) => d.key === key)
+  if (!def) return { key, message: `Unknown setting: ${key}` }
+
+  if (def.type === 'number') {
+    const num = Number(value)
+    if (isNaN(num)) return { key, message: 'Value must be a number' }
+    if (def.min != null && num < def.min) return { key, message: `Minimum value is ${def.min}` }
+    if (def.max != null && num > def.max) return { key, message: `Maximum value is ${def.max}` }
+  }
+
+  if (def.type === 'string' || def.type === 'path') {
+    if (typeof value !== 'string') return { key, message: 'Value must be a string' }
+    if (def.pattern) {
+      const regex = new RegExp(def.pattern)
+      if (!regex.test(value)) return { key, message: `Value must match pattern: ${def.pattern}` }
+    }
+  }
+
+  if (def.type === 'select') {
+    if (def.options && !def.options.some((o) => o.value === String(value))) {
+      return { key, message: `Invalid option: ${String(value)}` }
+    }
+  }
+
+  if (def.type === 'boolean') {
+    if (typeof value !== 'boolean') return { key, message: 'Value must be true or false' }
+  }
+
+  return null
+}
+
+/**
+ * Stage a setting change (pending, not saved yet).
+ */
+export async function updateSetting(
+  key: string,
+  value: SettingValue
+): Promise<{ success: boolean; error?: string }> {
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  const error = validateSettingValue(key, value)
+  if (error) return { success: false, error: error.message }
+
+  pendingChanges.set(key, value)
+  return { success: true }
+}
+
+/**
+ * Reset a setting to its default value (stages as pending change).
+ */
+export async function resetSetting(key: string): Promise<{ success: boolean; error?: string }> {
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  const def = MOCK_DEFINITIONS.find((d) => d.key === key)
+  if (!def) return { success: false, error: `Unknown setting: ${key}` }
+
+  pendingChanges.set(key, def.defaultValue)
+  return { success: true }
+}
+
+/**
+ * Get all pending (unsaved) changes.
+ */
+export async function getPendingChanges(): Promise<PendingChange[]> {
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  const changes: PendingChange[] = []
+
+  for (const [key, newValue] of pendingChanges) {
+    const def = MOCK_DEFINITIONS.find((d) => d.key === key)
+    if (!def) continue
+    const current = MOCK_CURRENT_VALUES.find((v) => v.key === key)
+    const oldValue = current?.value ?? def.defaultValue
+
+    // Only include if actually different
+    if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+      changes.push({ key, name: def.name, oldValue, newValue, type: def.type })
+    }
+  }
+
+  return changes
+}
+
+/**
+ * Save all pending changes (apply to mock data).
+ */
+export async function saveAllChanges(): Promise<{
+  success: boolean
+  savedCount: number
+  errors: SettingValidationError[]
+}> {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  const errors: SettingValidationError[] = []
+  let savedCount = 0
+
+  for (const [key, newValue] of pendingChanges) {
+    const error = validateSettingValue(key, newValue)
+    if (error) {
+      errors.push(error)
+      continue
+    }
+
+    const def = MOCK_DEFINITIONS.find((d) => d.key === key)
+    if (!def) continue
+
+    const idx = MOCK_CURRENT_VALUES.findIndex((v) => v.key === key)
+    const isModified = JSON.stringify(newValue) !== JSON.stringify(def.defaultValue)
+
+    if (idx >= 0) {
+      MOCK_CURRENT_VALUES[idx] = {
+        ...MOCK_CURRENT_VALUES[idx],
+        value: newValue,
+        isModified,
+        modifiedAt: isModified ? new Date() : undefined,
+      }
+    }
+    savedCount++
+  }
+
+  if (errors.length === 0) {
+    pendingChanges.clear()
+  }
+
+  return { success: errors.length === 0, savedCount, errors }
+}
+
+/**
+ * Discard all pending changes.
+ */
+export async function discardAllChanges(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  pendingChanges.clear()
+}
+
+/**
+ * Check if there are any pending changes.
+ */
+export function hasPendingChanges(): boolean {
+  return pendingChanges.size > 0
 }

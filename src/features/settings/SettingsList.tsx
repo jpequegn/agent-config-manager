@@ -1,13 +1,21 @@
 /**
  * SettingsList Component
- * Shows settings for the active category with values and types
+ * Shows settings for the active category with inline editing support
  */
 
-import { AlertTriangle, Beaker, Clock } from 'lucide-react'
+import { AlertTriangle, Beaker, Clock, Pencil, RotateCcw } from 'lucide-react'
 import { cn, formatRelativeTime } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { useSettingsStore, useSettingsList, useSelectedSettingKey } from '@/stores'
+import { SettingEditor } from './SettingEditor'
 import type { SettingEntry } from '@/services/settings'
-import type { SettingValueType } from '@/types'
+import type { SettingValue, SettingValueType } from '@/types'
+
+interface Props {
+  onUpdate?: (key: string, value: SettingValue) => void
+  onReset?: (key: string) => void
+  validationErrors?: Record<string, string>
+}
 
 /** Type badge colors */
 const TYPE_COLORS: Record<SettingValueType, string> = {
@@ -20,13 +28,13 @@ const TYPE_COLORS: Record<SettingValueType, string> = {
   json: 'bg-orange-500/20 text-orange-400',
 }
 
-export function SettingsList() {
+export function SettingsList({ onUpdate, onReset, validationErrors = {} }: Props) {
   const settings = useSettingsList()
   const selectedKey = useSelectedSettingKey()
   const selectKey = useSettingsStore((s) => s.selectKey)
   const activeCategory = useSettingsStore((s) => s.activeCategory)
 
-  // Filter by active category (service already filtered, but for display grouping)
+  // Filter by active category
   const displayed = activeCategory
     ? settings.filter((e) => e.definition.category === activeCategory)
     : settings
@@ -55,14 +63,25 @@ export function SettingsList() {
           )}
           <div className="divide-y">
             {group.entries.map((entry) => (
-              <SettingRow
-                key={entry.definition.key}
-                entry={entry}
-                isSelected={selectedKey === entry.definition.key}
-                onClick={() =>
-                  selectKey(selectedKey === entry.definition.key ? null : entry.definition.key)
-                }
-              />
+              <div key={entry.definition.key}>
+                <SettingRow
+                  entry={entry}
+                  isSelected={selectedKey === entry.definition.key}
+                  onClick={() =>
+                    selectKey(selectedKey === entry.definition.key ? null : entry.definition.key)
+                  }
+                  onEdit={() => selectKey(entry.definition.key)}
+                  onReset={onReset ? () => onReset(entry.definition.key) : undefined}
+                />
+                {selectedKey === entry.definition.key && onUpdate && (
+                  <SettingEditor
+                    entry={entry}
+                    onUpdate={onUpdate}
+                    onReset={onReset ?? (() => {})}
+                    validationError={validationErrors[entry.definition.key]}
+                  />
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -76,39 +95,68 @@ function SettingRow({
   entry,
   isSelected,
   onClick,
+  onEdit,
+  onReset,
 }: {
   entry: SettingEntry
   isSelected: boolean
   onClick: () => void
+  onEdit: () => void
+  onReset?: () => void
 }) {
   const { definition: def, current } = entry
 
   return (
-    <button
-      onClick={onClick}
+    <div
       className={cn(
         'flex w-full flex-col gap-1 px-6 py-3 text-left transition-colors hover:bg-accent/30',
         isSelected && 'bg-accent/20'
       )}
     >
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">{def.name}</span>
-        <span
-          className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium', TYPE_COLORS[def.type])}
-        >
-          {def.type}
-        </span>
-        {current.isModified && (
-          <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-            modified
+        <button onClick={onClick} className="flex flex-1 items-center gap-2 text-left">
+          <span className="text-sm font-medium">{def.name}</span>
+          <span
+            className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium', TYPE_COLORS[def.type])}
+          >
+            {def.type}
           </span>
-        )}
-        {def.experimental && (
-          <Beaker className="h-3 w-3 text-amber-400" aria-label="Experimental" />
-        )}
-        {def.deprecated && (
-          <AlertTriangle className="h-3 w-3 text-amber-400" aria-label="Deprecated" />
-        )}
+          {current.isModified && (
+            <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+              modified
+            </span>
+          )}
+          {def.experimental && (
+            <Beaker className="h-3 w-3 text-amber-400" aria-label="Experimental" />
+          )}
+          {def.deprecated && (
+            <AlertTriangle className="h-3 w-3 text-amber-400" aria-label="Deprecated" />
+          )}
+        </button>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={onEdit}
+            aria-label={`Edit ${def.name}`}
+          >
+            <Pencil className="h-3 w-3" />
+          </Button>
+          {current.isModified && onReset && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={onReset}
+              aria-label={`Reset ${def.name}`}
+            >
+              <RotateCcw className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground">{def.description}</p>
@@ -135,7 +183,7 @@ function SettingRow({
           </>
         )}
       </div>
-    </button>
+    </div>
   )
 }
 

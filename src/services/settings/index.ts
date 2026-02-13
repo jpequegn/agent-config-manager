@@ -1,13 +1,26 @@
 /**
  * Settings Service
- * Exports settings browsing and retrieval
+ * Exports settings browsing, editing, and validation
  */
 
+export type {
+  SettingsListStats,
+  SettingsFilterOptions,
+  SettingEntry,
+  PendingChange,
+  SettingValidationError,
+} from './service'
 export {
   listSettings,
   getSetting,
   getSettingsRaw,
   getSettingsStats,
   SETTING_CATEGORIES,
+  validateSettingValue,
+  updateSetting,
+  resetSetting,
+  getPendingChanges,
+  saveAllChanges,
+  discardAllChanges,
+  hasPendingChanges,
 } from './service'
-export type { SettingsListStats, SettingsFilterOptions, SettingEntry } from './service'
