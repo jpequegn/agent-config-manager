@@ -1,4 +1,4 @@
 // Migration feature
 // Cross-harness configuration migration
 
-export {}
+export { MigrationWizardPage } from './MigrationWizardPage'

@@ -41,3 +41,6 @@ export * from './hooks'
 
 // Unified search service
 export * from './search'
+
+// Migration service
+export * from './migration'
