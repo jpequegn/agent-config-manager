@@ -71,3 +71,6 @@ export {
 } from './sync-backup'
 // Note: createBackup and SyncStatus not re-exported here to avoid conflicts
 // Import directly from '@/services/sync-backup' when needed
+
+// Notifications service
+export * from './notifications'
