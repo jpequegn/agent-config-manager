@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, lazy, Suspense } from 'react'
 import {
   FolderSearch,
   BookOpen,
@@ -14,26 +14,58 @@ import {
   ArrowLeftRight,
   Archive,
   Bell,
+  Loader2,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
-import {
-  ProjectContextPage,
-  LearningsPage,
-  MemoryDashboard,
-  SessionMemoryPage,
-  ExternalContextPage,
-} from '@/features/memory'
-import { ConversationsPage } from '@/features/conversations'
-import { SkillsPage } from '@/features/skills'
-import { ToolsPage } from '@/features/tools'
-import { SettingsPage } from '@/features/settings'
-import { HooksPage, HookTestingPage } from '@/features/hooks'
-import { MigrationWizardPage } from '@/features/migration'
-import { SyncBackupPage } from '@/features/sync-backup'
-import { NotificationsPage } from '@/features/notifications'
 import { ToastContainer } from '@/components/notifications'
 import { cn } from '@/lib/utils'
+
+// Lazy-loaded tab pages for route-level code splitting
+const MemoryDashboard = lazy(() =>
+  import('@/features/memory').then((m) => ({ default: m.MemoryDashboard }))
+)
+const ExternalContextPage = lazy(() =>
+  import('@/features/memory').then((m) => ({ default: m.ExternalContextPage }))
+)
+const ProjectContextPage = lazy(() =>
+  import('@/features/memory').then((m) => ({ default: m.ProjectContextPage }))
+)
+const LearningsPage = lazy(() =>
+  import('@/features/memory').then((m) => ({ default: m.LearningsPage }))
+)
+const SessionMemoryPage = lazy(() =>
+  import('@/features/memory').then((m) => ({ default: m.SessionMemoryPage }))
+)
+const ConversationsPage = lazy(() =>
+  import('@/features/conversations').then((m) => ({ default: m.ConversationsPage }))
+)
+const HooksPage = lazy(() => import('@/features/hooks').then((m) => ({ default: m.HooksPage })))
+const HookTestingPage = lazy(() =>
+  import('@/features/hooks').then((m) => ({ default: m.HookTestingPage }))
+)
+const SkillsPage = lazy(() => import('@/features/skills').then((m) => ({ default: m.SkillsPage })))
+const ToolsPage = lazy(() => import('@/features/tools').then((m) => ({ default: m.ToolsPage })))
+const MigrationWizardPage = lazy(() =>
+  import('@/features/migration').then((m) => ({ default: m.MigrationWizardPage }))
+)
+const SyncBackupPage = lazy(() =>
+  import('@/features/sync-backup').then((m) => ({ default: m.SyncBackupPage }))
+)
+const NotificationsPage = lazy(() =>
+  import('@/features/notifications').then((m) => ({ default: m.NotificationsPage }))
+)
+const SettingsPage = lazy(() =>
+  import('@/features/settings').then((m) => ({ default: m.SettingsPage }))
+)
+
+function TabFallback() {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    </div>
+  )
+}
 
 type AppTab =
   | 'memory'
@@ -134,118 +166,120 @@ function App() {
         </div>
       }
     >
-      <div
-        id="panel-memory"
-        role="tabpanel"
-        aria-labelledby="memory-tab"
-        hidden={activeTab !== 'memory'}
-      >
-        {activeTab === 'memory' && <MemoryDashboard />}
-      </div>
-      <div
-        id="panel-external-context"
-        role="tabpanel"
-        aria-labelledby="external-context-tab"
-        hidden={activeTab !== 'external-context'}
-      >
-        {activeTab === 'external-context' && <ExternalContextPage />}
-      </div>
-      <div
-        id="panel-project-context"
-        role="tabpanel"
-        aria-labelledby="project-context-tab"
-        hidden={activeTab !== 'project-context'}
-      >
-        {activeTab === 'project-context' && <ProjectContextPage />}
-      </div>
-      <div
-        id="panel-learnings"
-        role="tabpanel"
-        aria-labelledby="learnings-tab"
-        hidden={activeTab !== 'learnings'}
-      >
-        {activeTab === 'learnings' && <LearningsPage />}
-      </div>
-      <div
-        id="panel-session-memory"
-        role="tabpanel"
-        aria-labelledby="session-memory-tab"
-        hidden={activeTab !== 'session-memory'}
-      >
-        {activeTab === 'session-memory' && <SessionMemoryPage />}
-      </div>
-      <div
-        id="panel-sessions"
-        role="tabpanel"
-        aria-labelledby="sessions-tab"
-        hidden={activeTab !== 'sessions'}
-      >
-        {activeTab === 'sessions' && <ConversationsPage />}
-      </div>
-      <div
-        id="panel-hooks"
-        role="tabpanel"
-        aria-labelledby="hooks-tab"
-        hidden={activeTab !== 'hooks'}
-      >
-        {activeTab === 'hooks' && <HooksPage />}
-      </div>
-      <div
-        id="panel-hook-testing"
-        role="tabpanel"
-        aria-labelledby="hook-testing-tab"
-        hidden={activeTab !== 'hook-testing'}
-      >
-        {activeTab === 'hook-testing' && <HookTestingPage />}
-      </div>
-      <div
-        id="panel-skills"
-        role="tabpanel"
-        aria-labelledby="skills-tab"
-        hidden={activeTab !== 'skills'}
-      >
-        {activeTab === 'skills' && <SkillsPage />}
-      </div>
-      <div
-        id="panel-tools"
-        role="tabpanel"
-        aria-labelledby="tools-tab"
-        hidden={activeTab !== 'tools'}
-      >
-        {activeTab === 'tools' && <ToolsPage />}
-      </div>
-      <div
-        id="panel-migration"
-        role="tabpanel"
-        aria-labelledby="migration-tab"
-        hidden={activeTab !== 'migration'}
-      >
-        {activeTab === 'migration' && <MigrationWizardPage />}
-      </div>
-      <div
-        id="panel-sync-backup"
-        role="tabpanel"
-        aria-labelledby="sync-backup-tab"
-        hidden={activeTab !== 'sync-backup'}
-      >
-        {activeTab === 'sync-backup' && <SyncBackupPage />}
-      </div>
-      <div
-        id="panel-notifications"
-        role="tabpanel"
-        aria-labelledby="notifications-tab"
-        hidden={activeTab !== 'notifications'}
-      >
-        {activeTab === 'notifications' && <NotificationsPage />}
-      </div>
-      <div
-        id="panel-settings"
-        role="tabpanel"
-        aria-labelledby="settings-tab"
-        hidden={activeTab !== 'settings'}
-      >
-        {activeTab === 'settings' && <SettingsPage />}
-      </div>
+      <Suspense fallback={<TabFallback />}>
+        <div
+          id="panel-memory"
+          role="tabpanel"
+          aria-labelledby="memory-tab"
+          hidden={activeTab !== 'memory'}
+        >
+          {activeTab === 'memory' && <MemoryDashboard />}
+        </div>
+        <div
+          id="panel-external-context"
+          role="tabpanel"
+          aria-labelledby="external-context-tab"
+          hidden={activeTab !== 'external-context'}
+        >
+          {activeTab === 'external-context' && <ExternalContextPage />}
+        </div>
+        <div
+          id="panel-project-context"
+          role="tabpanel"
+          aria-labelledby="project-context-tab"
+          hidden={activeTab !== 'project-context'}
+        >
+          {activeTab === 'project-context' && <ProjectContextPage />}
+        </div>
+        <div
+          id="panel-learnings"
+          role="tabpanel"
+          aria-labelledby="learnings-tab"
+          hidden={activeTab !== 'learnings'}
+        >
+          {activeTab === 'learnings' && <LearningsPage />}
+        </div>
+        <div
+          id="panel-session-memory"
+          role="tabpanel"
+          aria-labelledby="session-memory-tab"
+          hidden={activeTab !== 'session-memory'}
+        >
+          {activeTab === 'session-memory' && <SessionMemoryPage />}
+        </div>
+        <div
+          id="panel-sessions"
+          role="tabpanel"
+          aria-labelledby="sessions-tab"
+          hidden={activeTab !== 'sessions'}
+        >
+          {activeTab === 'sessions' && <ConversationsPage />}
+        </div>
+        <div
+          id="panel-hooks"
+          role="tabpanel"
+          aria-labelledby="hooks-tab"
+          hidden={activeTab !== 'hooks'}
+        >
+          {activeTab === 'hooks' && <HooksPage />}
+        </div>
+        <div
+          id="panel-hook-testing"
+          role="tabpanel"
+          aria-labelledby="hook-testing-tab"
+          hidden={activeTab !== 'hook-testing'}
+        >
+          {activeTab === 'hook-testing' && <HookTestingPage />}
+        </div>
+        <div
+          id="panel-skills"
+          role="tabpanel"
+          aria-labelledby="skills-tab"
+          hidden={activeTab !== 'skills'}
+        >
+          {activeTab === 'skills' && <SkillsPage />}
+        </div>
+        <div
+          id="panel-tools"
+          role="tabpanel"
+          aria-labelledby="tools-tab"
+          hidden={activeTab !== 'tools'}
+        >
+          {activeTab === 'tools' && <ToolsPage />}
+        </div>
+        <div
+          id="panel-migration"
+          role="tabpanel"
+          aria-labelledby="migration-tab"
+          hidden={activeTab !== 'migration'}
+        >
+          {activeTab === 'migration' && <MigrationWizardPage />}
+        </div>
+        <div
+          id="panel-sync-backup"
+          role="tabpanel"
+          aria-labelledby="sync-backup-tab"
+          hidden={activeTab !== 'sync-backup'}
+        >
+          {activeTab === 'sync-backup' && <SyncBackupPage />}
+        </div>
+        <div
+          id="panel-notifications"
+          role="tabpanel"
+          aria-labelledby="notifications-tab"
+          hidden={activeTab !== 'notifications'}
+        >
+          {activeTab === 'notifications' && <NotificationsPage />}
+        </div>
+        <div
+          id="panel-settings"
+          role="tabpanel"
+          aria-labelledby="settings-tab"
+          hidden={activeTab !== 'settings'}
+        >
+          {activeTab === 'settings' && <SettingsPage />}
+        </div>
+      </Suspense>
       <ToastContainer />
     </AppShell>
   )

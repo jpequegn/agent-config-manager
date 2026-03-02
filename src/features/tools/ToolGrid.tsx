@@ -3,7 +3,7 @@
  * Displays tools in a card grid with search and filtering
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, memo } from 'react'
 import { Search, X, Server, Filter } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -55,8 +55,8 @@ export function ToolGrid({ onSelect }: ToolGridProps) {
 
   const hasFilters = searchQuery || filterHarness || filterMCPOnly
 
-  // Get unique harnesses from tools
-  const harnesses = [...new Set(tools.map((t) => t.harness))]
+  // Get unique harnesses from tools (memoized to avoid recomputing on every render)
+  const harnesses = useMemo(() => [...new Set(tools.map((t) => t.harness))], [tools])
 
   return (
     <div className="flex h-full flex-col overflow-auto">
@@ -139,8 +139,8 @@ export function ToolGrid({ onSelect }: ToolGridProps) {
   )
 }
 
-/** Individual tool card */
-function ToolCard({
+/** Individual tool card - memoized to prevent re-render when other tools change */
+const ToolCard = memo(function ToolCard({
   tool,
   isSelected,
   onClick,
@@ -182,4 +182,4 @@ function ToolCard({
       </div>
     </button>
   )
-}
+})
