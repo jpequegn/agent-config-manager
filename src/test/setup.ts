@@ -1,5 +1,31 @@
 import '@testing-library/jest-dom'
 
+// Provide a working localStorage for persisted Zustand stores.
+// Bun's jsdom does not implement localStorage.setItem/getItem correctly.
+const localStorageStore: Record<string, string> = {}
+const localStorageMock = {
+  getItem: (key: string): string | null => localStorageStore[key] ?? null,
+  setItem: (key: string, value: string): void => {
+    localStorageStore[key] = value
+  },
+  removeItem: (key: string): void => {
+    delete localStorageStore[key]
+  },
+  clear: (): void => {
+    for (const key of Object.keys(localStorageStore)) {
+      delete localStorageStore[key]
+    }
+  },
+  get length(): number {
+    return Object.keys(localStorageStore).length
+  },
+  key: (index: number): string | null => Object.keys(localStorageStore)[index] ?? null,
+}
+Object.defineProperty(globalThis, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+})
+
 // Extend Vitest's expect with jest-dom matchers
 // This is done automatically by importing '@testing-library/jest-dom'
 
