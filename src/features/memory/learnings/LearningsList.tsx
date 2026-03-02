@@ -1,8 +1,11 @@
 /**
  * LearningsList Component
- * Filterable list of learnings organized by category
+ * Filterable list of learnings organized by category.
+ * Uses virtualization for smooth rendering of large learning lists.
  */
 
+import { useRef, useMemo, useCallback } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { Search, BookOpen, Loader2, Tag } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -29,6 +32,10 @@ const CATEGORY_COLORS: Record<LearningCategory, string> = {
   other: 'bg-gray-500/20 text-gray-400',
 }
 
+type FlatRow =
+  | { type: 'header'; category: LearningCategory; count: number }
+  | { type: 'item'; learning: MemoryEntrySummary }
+
 export function LearningsList() {
   const learnings = useLearnings()
   const selectedLearning = useSelectedLearning()
@@ -39,18 +46,44 @@ export function LearningsList() {
   const setFilterCategory = useLearningsStore((s) => s.setFilterCategory)
   const selectLearning = useLearningsStore((s) => s.selectLearning)
 
-  async function handleSelect(summary: MemoryEntrySummary) {
-    const full = await getLearning(summary.id)
-    selectLearning(full)
-  }
+  const parentRef = useRef<HTMLDivElement>(null)
 
-  // Group by category for tree view
-  const grouped = new Map<LearningCategory, MemoryEntrySummary[]>()
-  for (const l of learnings) {
-    const cat = l.category ?? 'other'
-    if (!grouped.has(cat)) grouped.set(cat, [])
-    grouped.get(cat)!.push(l)
-  }
+  const handleSelect = useCallback(
+    async (summary: MemoryEntrySummary) => {
+      const full = await getLearning(summary.id)
+      selectLearning(full)
+    },
+    [selectLearning]
+  )
+
+  // Flatten grouped data into a single list for virtualization
+  const flatRows = useMemo<FlatRow[]>(() => {
+    const grouped = new Map<LearningCategory, MemoryEntrySummary[]>()
+    for (const l of learnings) {
+      const cat = l.category ?? 'other'
+      if (!grouped.has(cat)) grouped.set(cat, [])
+      grouped.get(cat)!.push(l)
+    }
+
+    const rows: FlatRow[] = []
+    for (const [category, items] of grouped.entries()) {
+      rows.push({ type: 'header', category, count: items.length })
+      for (const learning of items) {
+        rows.push({ type: 'item', learning })
+      }
+    }
+    return rows
+  }, [learnings])
+
+  const virtualizer = useVirtualizer({
+    count: flatRows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => {
+      const row = flatRows[index]
+      return row?.type === 'header' ? 32 : 68
+    },
+    overscan: 10,
+  })
 
   return (
     <div className="flex h-full flex-col">
@@ -88,8 +121,8 @@ export function LearningsList() {
         ))}
       </div>
 
-      {/* Learnings list grouped by category */}
-      <div className="flex-1 overflow-y-auto px-3 pb-3">
+      {/* Virtualized learnings list */}
+      <div ref={parentRef} className="flex-1 overflow-y-auto px-3 pb-3">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
             <Loader2 className="h-6 w-6 animate-spin" />
@@ -101,48 +134,67 @@ export function LearningsList() {
             <span className="text-sm">No learnings found</span>
           </div>
         ) : (
-          <div className="space-y-4">
-            {Array.from(grouped.entries()).map(([category, items]) => (
-              <div key={category}>
-                <div className="mb-1.5 flex items-center gap-2">
-                  <Tag className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    {LEARNING_CATEGORIES.find((c) => c.value === category)?.label ?? category}
-                  </span>
-                  <span className="text-xs text-muted-foreground">({items.length})</span>
-                </div>
-                <div className="space-y-1">
-                  {items.map((learning) => (
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualItem) => {
+              const row = flatRows[virtualItem.index]
+              return (
+                <div
+                  key={virtualItem.key}
+                  data-index={virtualItem.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualItem.start}px)`,
+                  }}
+                >
+                  {row.type === 'header' ? (
+                    <div className="mb-1.5 flex items-center gap-2 pt-4 first:pt-0">
+                      <Tag className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        {LEARNING_CATEGORIES.find((c) => c.value === row.category)?.label ??
+                          row.category}
+                      </span>
+                      <span className="text-xs text-muted-foreground">({row.count})</span>
+                    </div>
+                  ) : (
                     <button
-                      key={learning.id}
-                      onClick={() => handleSelect(learning)}
+                      onClick={() => handleSelect(row.learning)}
                       className={cn(
-                        'flex w-full flex-col gap-1 rounded-lg border p-2.5 text-left transition-colors',
+                        'flex w-full flex-col gap-1 rounded-lg border p-2.5 text-left transition-colors mb-1',
                         'hover:bg-accent/50',
-                        selectedLearning?.id === learning.id
+                        selectedLearning?.id === row.learning.id
                           ? 'border-primary bg-accent'
                           : 'border-transparent'
                       )}
                     >
-                      <span className="text-sm font-medium leading-snug">{learning.title}</span>
+                      <span className="text-sm font-medium leading-snug">{row.learning.title}</span>
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
                             'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
-                            CATEGORY_COLORS[learning.category ?? 'other']
+                            CATEGORY_COLORS[row.learning.category ?? 'other']
                           )}
                         >
-                          {learning.category ?? 'other'}
+                          {row.learning.category ?? 'other'}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {formatRelativeTime(learning.createdAt)}
+                          {formatRelativeTime(row.learning.createdAt)}
                         </span>
                       </div>
                     </button>
-                  ))}
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

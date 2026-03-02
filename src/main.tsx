@@ -4,6 +4,7 @@ import './index.css'
 import './styles/accessibility.css'
 import App from './App.tsx'
 import { ThemeProvider } from './components/theme'
+import { reportWebVitals } from './lib/reportWebVitals'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -12,3 +13,5 @@ createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </StrictMode>
 )
+
+reportWebVitals()

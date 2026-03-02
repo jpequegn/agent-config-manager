@@ -3,6 +3,7 @@
  * Shows settings for the active category with inline editing support
  */
 
+import { useMemo, memo } from 'react'
 import { AlertTriangle, Beaker, Clock, Pencil, RotateCcw } from 'lucide-react'
 import { cn, formatRelativeTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -34,10 +35,21 @@ export function SettingsList({ onUpdate, onReset, validationErrors = {} }: Props
   const selectKey = useSettingsStore((s) => s.selectKey)
   const activeCategory = useSettingsStore((s) => s.activeCategory)
 
-  // Filter by active category
-  const displayed = activeCategory
-    ? settings.filter((e) => e.definition.category === activeCategory)
-    : settings
+  // Filter by active category (memoized)
+  const displayed = useMemo(
+    () =>
+      activeCategory ? settings.filter((e) => e.definition.category === activeCategory) : settings,
+    [settings, activeCategory]
+  )
+
+  // Group by category when showing all (memoized)
+  const grouped = useMemo(
+    () =>
+      !activeCategory
+        ? groupByCategory(displayed)
+        : [{ category: activeCategory, entries: displayed }],
+    [displayed, activeCategory]
+  )
 
   if (displayed.length === 0) {
     return (
@@ -46,11 +58,6 @@ export function SettingsList({ onUpdate, onReset, validationErrors = {} }: Props
       </div>
     )
   }
-
-  // Group by category when showing all
-  const grouped = !activeCategory
-    ? groupByCategory(displayed)
-    : [{ category: activeCategory, entries: displayed }]
 
   return (
     <div className="h-full overflow-auto">
@@ -90,8 +97,8 @@ export function SettingsList({ onUpdate, onReset, validationErrors = {} }: Props
   )
 }
 
-/** Individual setting row */
-function SettingRow({
+/** Individual setting row - memoized to prevent re-render when unrelated settings change */
+const SettingRow = memo(function SettingRow({
   entry,
   isSelected,
   onClick,
@@ -185,7 +192,7 @@ function SettingRow({
       </div>
     </div>
   )
-}
+})
 
 /** Renders a setting value appropriately */
 function ValueDisplay({
