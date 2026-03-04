@@ -2,8 +2,20 @@
   "name": "agent-config-manager",
   "version": "0.1.0",
   "description": "Unified UI for managing AI coding agent configurations",
-  "private": true,
   "type": "module",
+  "homepage": "https://github.com/jpequegn/agent-config-manager#readme",
+  "bin": {
+    "agent-config-manager": "./bin/agent-config-manager.mjs"
+  },
+  "files": [
+    "dist/",
+    "bin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

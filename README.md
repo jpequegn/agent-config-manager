@@ -56,12 +56,22 @@ Harnesses are auto-detected on startup from your home directory.
 
 ## Getting Started
 
-### Prerequisites
+### Install from npm (recommended)
 
-- [Node.js](https://nodejs.org/) 18+ or [Bun](https://bun.sh/) 1.0+
-- macOS, Linux, or Windows
+```bash
+npm install -g agent-config-manager
+agent-config-manager
+```
 
-### Installation
+The app opens automatically in your browser at `http://localhost:5173`.
+
+### Run without installing
+
+```bash
+npx agent-config-manager
+```
+
+### Local development
 
 ```bash
 # Clone the repository
@@ -162,7 +172,7 @@ bun run test:run          # all tests
 bun run test:coverage     # with coverage report
 ```
 
-All 1000+ tests run in under 25 seconds using Vitest in jsdom.
+All 1200+ tests run in under 25 seconds using Vitest in jsdom.
 
 ---
 
@@ -170,6 +180,7 @@ All 1000+ tests run in under 25 seconds using Vitest in jsdom.
 
 | Document | Description |
 |----------|-------------|
+| [Changelog](./CHANGELOG.md) | Release history and what's new |
 | [User Guide](./docs/USER_GUIDE.md) | Feature walkthroughs, keyboard shortcuts, and workflows |
 | [Plugin API](./docs/PLUGIN_API.md) | How to write a custom harness adapter |
 | [Contributing](./CONTRIBUTING.md) | Contribution guidelines and PR process |
